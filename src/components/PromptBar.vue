@@ -61,7 +61,15 @@ function submit() {
         @click="submit"
         aria-label="Send"
       >
-        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <svg
+          xmlns="http://www.w3.org/2000/svg"
+          viewBox="0 0 24 24"
+          fill="none"
+          stroke="currentColor"
+          stroke-width="2"
+          stroke-linecap="round"
+          stroke-linejoin="round"
+        >
           <line x1="22" y1="2" x2="11" y2="13" />
           <polygon points="22 2 15 22 11 13 2 9 22 2" />
         </svg>
@@ -86,22 +94,24 @@ function submit() {
   display: flex;
   align-items: flex-end;
   gap: 0;
-  background: #170505;
-  border: 1px solid #4a1a1a;
+  background: #2a1515;
+  border: 1px solid #6a4a3a;
   border-radius: 10px;
   padding: 4px 4px 4px 16px;
-  transition: border-color 0.2s ease, box-shadow 0.2s ease;
+  transition:
+    border-color 0.2s ease,
+    box-shadow 0.2s ease;
 }
 
 .promptbar:focus-within {
-  border-color: #7a3020;
+  border-color: #a75c3a;
   box-shadow:
-    0 0 0 1px rgba(135, 4, 0, 0.2),
-    0 4px 24px rgba(0, 0, 0, 0.4);
+    0 0 0 1px rgba(167, 92, 58, 0.15),
+    0 4px 24px rgba(0, 0, 0, 0.2);
 }
 
 .promptbar.focused {
-  border-color: #6a2515;
+  border-color: #956a45;
 }
 
 .promptbar-input {
@@ -109,7 +119,7 @@ function submit() {
   background: transparent;
   border: none;
   outline: none;
-  color: var(--beige);
+  color: #e8dcc8;
   font-family: var(--font-mono), monospace;
   font-size: 13.5px;
   line-height: 1.6;
@@ -119,11 +129,11 @@ function submit() {
   max-height: 240px;
   overflow-y: auto;
   scrollbar-width: thin;
-  scrollbar-color: #3a1010 transparent;
+  scrollbar-color: #5a3a2a transparent;
 }
 
 .promptbar-input::placeholder {
-  color: #5a2a20;
+  color: #8a6a5a;
 }
 
 .promptbar-input::-webkit-scrollbar {
@@ -139,15 +149,19 @@ function submit() {
   width: 36px;
   height: 36px;
   margin: 4px;
-  background: #2a0a0a;
-  border: 1px solid #3a1010;
+  background: #3a2520;
+  border: 1px solid #5a4030;
   border-radius: 7px;
   display: flex;
   align-items: center;
   justify-content: center;
   cursor: pointer;
-  color: #5a2a20;
-  transition: background 0.15s, border-color 0.15s, color 0.15s, box-shadow 0.15s;
+  color: #8a7060;
+  transition:
+    background 0.15s,
+    border-color 0.15s,
+    color 0.15s,
+    box-shadow 0.15s;
   align-self: flex-end;
 }
 
@@ -157,15 +171,15 @@ function submit() {
 }
 
 .promptbar-send.active {
-  background: var(--formula-red);
-  border-color: var(--dark-red);
-  color: var(--beige);
-  box-shadow: 0 0 12px rgba(135, 4, 0, 0.4);
+  background: #c84a30;
+  border-color: #a83a20;
+  color: #f5f0e8;
+  box-shadow: 0 0 12px rgba(200, 74, 48, 0.25);
 }
 
 .promptbar-send.active:hover {
-  background: var(--dark-red);
-  box-shadow: 0 0 18px rgba(135, 4, 0, 0.6);
+  background: #b84020;
+  box-shadow: 0 0 18px rgba(200, 74, 48, 0.35);
 }
 
 .promptbar-send:disabled:not(.active) {
@@ -175,7 +189,7 @@ function submit() {
 .promptbar-hint {
   font-family: var(--font-mono), monospace;
   font-size: 10px;
-  color: #3a1a1a;
+  color: #6a5a4a;
   letter-spacing: 0.04em;
 }
 </style>
