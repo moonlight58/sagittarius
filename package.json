@@ -10,6 +10,7 @@
     "format": "prettier --write --experimental-cli src/"
   },
   "dependencies": {
+    "netlify-cli": "^23.15.1",
     "pinia": "^3.0.4",
     "vue": "beta",
     "vue-router": "^5.0.2"
