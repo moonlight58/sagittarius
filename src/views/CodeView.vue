@@ -78,7 +78,7 @@ const canSubmit = computed(() => !!activeModel.value)
 .empty-hint {
   font-family: var(--font-mono), monospace;
   font-size: 12px;
-  color: #4a2020;
+  color: var(--orange);
   letter-spacing: 0.05em;
 }
 

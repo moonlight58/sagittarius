@@ -1,26 +1,69 @@
-import { ref, computed } from 'vue'
+import { ref, computed, watch } from 'vue'
 
-// Shared models across all tabs
+// Shared models across tabs
 const importedModels = ref([])
 const activeModel = ref(null)
 
-// Per-tab isolated state
-const tabStates = {
-  code: {
-    chats: ref([]),
-    activeChatId: ref(null),
-  },
-  mail: {
-    chats: ref([]),
-    activeChatId: ref(null),
-  },
+function loadModels() {
+  try {
+    const raw = localStorage.getItem('sagittarius:models')
+    if (raw) {
+      const parsed = JSON.parse(raw)
+      importedModels.value = parsed.models ?? []
+      activeModel.value = parsed.activeModel ?? null
+    }
+  } catch {}
 }
 
-let nextId = 1
+function saveModels() {
+  localStorage.setItem(
+    'sagittarius:models',
+    JSON.stringify({ models: importedModels.value, activeModel: activeModel.value }),
+  )
+}
+
+loadModels()
+watch([importedModels, activeModel], saveModels, { deep: true })
+
+// Per-tab state factory
+function createTabState(tab) {
+  const storageKey = `sagittarius:chats:${tab}`
+  const chats = ref([])
+  const activeChatId = ref(null)
+
+  function load() {
+    try {
+      const raw = localStorage.getItem(storageKey)
+      if (raw) {
+        const parsed = JSON.parse(raw)
+        chats.value = parsed.chats ?? []
+        activeChatId.value = parsed.activeChatId ?? null
+      }
+    } catch {}
+  }
+
+  function save() {
+    localStorage.setItem(
+      storageKey,
+      JSON.stringify({ chats: chats.value, activeChatId: activeChatId.value }),
+    )
+  }
+
+  load()
+  watch([chats, activeChatId], save, { deep: true })
+
+  return { chats, activeChatId }
+}
+
+const tabStates = {
+  code: createTabState('code'),
+  mail: createTabState('mail'),
+}
+
+let nextId = Date.now()
 
 export function useChat(tab) {
-  const state = tabStates[tab]
-  const { chats, activeChatId } = state
+  const { chats, activeChatId } = tabStates[tab]
 
   const activeChat = computed(
     () => chats.value.find((c) => c.id === activeChatId.value) ?? null,
@@ -31,14 +74,20 @@ export function useChat(tab) {
       importedModels.value.push(name)
       if (!activeModel.value) activeModel.value = name
     }
+    saveModels()
   }
 
   function selectModel(name) {
     activeModel.value = name
+    saveModels()
   }
 
   function selectChat(id) {
     activeChatId.value = id
+  }
+
+  function newChat() {
+    activeChatId.value = null
   }
 
   function deleteChat(id) {
@@ -53,8 +102,6 @@ export function useChat(tab) {
     const chat = activeChat.value
     if (!chat || !content.trim()) return
     chat.messages.push({ role: 'user', content: content.trim(), ts: Date.now() })
-
-    // Placeholder — real Ollama call comes later
     setTimeout(() => {
       chat.messages.push({
         role: 'assistant',
@@ -66,7 +113,6 @@ export function useChat(tab) {
 
   function submitPrompt(content) {
     if (!activeChat.value) {
-      // Create new chat
       const id = nextId++
       const chat = {
         id,
@@ -91,6 +137,7 @@ export function useChat(tab) {
     importModel,
     selectModel,
     selectChat,
+    newChat,
     deleteChat,
     submitPrompt,
   }

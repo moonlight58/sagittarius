@@ -26,11 +26,25 @@ function pickModel(name) {
 <template>
   <header class="topbar">
     <!-- Model selector -->
-    <div v-if="importedModels.length" class="model-selector" v-click-outside="() => (showModelDropdown = false)">
+    <div
+      v-if="importedModels.length"
+      class="model-selector"
+      v-click-outside="() => (showModelDropdown = false)"
+    >
       <button class="model-current" @click="showModelDropdown = !showModelDropdown">
         <span class="model-dot active" />
         <span>{{ activeModel ?? 'Select model' }}</span>
-        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="chevron" :class="{ open: showModelDropdown }">
+        <svg
+          xmlns="http://www.w3.org/2000/svg"
+          viewBox="0 0 24 24"
+          fill="none"
+          stroke="currentColor"
+          stroke-width="2"
+          stroke-linecap="round"
+          stroke-linejoin="round"
+          class="chevron"
+          :class="{ open: showModelDropdown }"
+        >
           <polyline points="6 9 12 15 18 9" />
         </svg>
       </button>
@@ -53,12 +67,20 @@ function pickModel(name) {
 
     <!-- Import button -->
     <button class="ollama-btn" @click="showModal = true">
-      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+      <svg
+        xmlns="http://www.w3.org/2000/svg"
+        viewBox="0 0 24 24"
+        fill="none"
+        stroke="currentColor"
+        stroke-width="1.8"
+        stroke-linecap="round"
+        stroke-linejoin="round"
+      >
         <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
         <polyline points="17 8 12 3 7 8" />
         <line x1="12" y1="3" x2="12" y2="15" />
       </svg>
-      <span>Import Ollama Model</span>
+      <span>Pull Model</span>
     </button>
 
     <OllamaModal v-model="showModal" @import="onImport" />
@@ -76,7 +98,9 @@ function pickModel(name) {
   flex-wrap: wrap;
 }
 
-.model-selector { position: relative; }
+.model-selector {
+  position: relative;
+}
 
 .model-current {
   display: flex;
@@ -90,7 +114,9 @@ function pickModel(name) {
   font-family: var(--font-mono), monospace;
   font-size: 12px;
   cursor: pointer;
-  transition: border-color 0.15s, background 0.15s;
+  transition:
+    border-color 0.15s,
+    background 0.15s;
   white-space: nowrap;
 }
 
@@ -118,7 +144,9 @@ function pickModel(name) {
   color: #7a3030;
   transition: transform 0.2s ease;
 }
-.chevron.open { transform: rotate(180deg); }
+.chevron.open {
+  transform: rotate(180deg);
+}
 
 .model-dropdown {
   position: absolute;
@@ -146,12 +174,19 @@ function pickModel(name) {
   font-size: 12px;
   cursor: pointer;
   text-align: left;
-  transition: background 0.12s, color 0.12s;
+  transition:
+    background 0.12s,
+    color 0.12s;
   white-space: nowrap;
 }
 
-.model-option:hover { background: rgba(135, 4, 0, 0.15); color: var(--beige); }
-.model-option.active { color: var(--orange); }
+.model-option:hover {
+  background: rgba(135, 4, 0, 0.15);
+  color: var(--beige);
+}
+.model-option.active {
+  color: var(--orange);
+}
 
 .ollama-btn {
   display: flex;
@@ -168,10 +203,17 @@ function pickModel(name) {
   letter-spacing: 0.06em;
   text-transform: uppercase;
   cursor: pointer;
-  transition: background 0.15s, border-color 0.15s, box-shadow 0.15s;
+  transition:
+    background 0.15s,
+    border-color 0.15s,
+    box-shadow 0.15s;
 }
 
-.ollama-btn svg { width: 14px; height: 14px; color: var(--orange); }
+.ollama-btn svg {
+  width: 14px;
+  height: 14px;
+  color: var(--orange);
+}
 
 .ollama-btn:hover {
   background: rgba(80, 0, 1, 0.3);
@@ -179,10 +221,14 @@ function pickModel(name) {
   box-shadow: 0 0 12px rgba(240, 118, 12, 0.15);
 }
 
-.dropdown-fade-enter-active, .dropdown-fade-leave-active {
-  transition: opacity 0.15s ease, transform 0.15s ease;
+.dropdown-fade-enter-active,
+.dropdown-fade-leave-active {
+  transition:
+    opacity 0.15s ease,
+    transform 0.15s ease;
 }
-.dropdown-fade-enter-from, .dropdown-fade-leave-to {
+.dropdown-fade-enter-from,
+.dropdown-fade-leave-to {
   opacity: 0;
   transform: translateY(-4px);
 }
