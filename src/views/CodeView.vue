@@ -20,7 +20,19 @@ function importModel() {
     <!-- Top bar -->
     <header class="view-topbar">
       <button class="ollama-btn" @click="showOllamaModal = true">
-        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+        <svg
+          xmlns="http://www.w3.org/2000/svg"
+          viewBox="0 0 24 24"
+          fill="none"
+          stroke="currentColor"
+          stroke-width="1.8"
+          stroke-linecap="round"
+          stroke-linejoin="round"
+        >
+          <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
+          <polyline points="17 8 12 3 7 8" />
+          <line x1="12" y1="3" x2="12" y2="15" />
+        </svg>
         <span>Import Ollama Model</span>
       </button>
 
@@ -39,7 +51,10 @@ function importModel() {
       <div v-if="showOllamaModal" class="modal-overlay" @click.self="showOllamaModal = false">
         <div class="modal">
           <h3 class="modal-title">Import Ollama Model</h3>
-          <p class="modal-sub">Enter the model name (e.g. <code>llama3</code>, <code>mistral</code>)</p>
+          <p class="modal-sub">
+            Enter the model name (e.g. <code>llama3</code>, <code>mistral</code>)
+          </p>
+          <p class="modal-sub">Check all available models at <a href="https://ollama.com/library" target="_blank" class="modal-link">https://ollama.com/library</a></p>
           <input
             v-model="modelInput"
             class="modal-input"
@@ -62,7 +77,7 @@ function importModel() {
   display: flex;
   flex-direction: column;
   height: 100%;
-  background: #0e0000;
+  background: var(--color-bg);
 }
 
 .view-topbar {
@@ -80,27 +95,30 @@ function importModel() {
   gap: 8px;
   padding: 7px 14px;
   background: transparent;
-  border: 1px solid #500001;
+  border: 1px solid var(--formula-red);
   border-radius: 5px;
-  color: #FBF5D7;
+  color: var(--beige);
   font-family: 'Syne', sans-serif;
   font-size: 12px;
   font-weight: 600;
   letter-spacing: 0.06em;
   text-transform: uppercase;
   cursor: pointer;
-  transition: background 0.15s, border-color 0.15s, box-shadow 0.15s;
+  transition:
+    background 0.15s,
+    border-color 0.15s,
+    box-shadow 0.15s;
 }
 
 .ollama-btn svg {
   width: 15px;
   height: 15px;
-  color: #F0760C;
+  color: var(--orange);
 }
 
 .ollama-btn:hover {
   background: rgba(80, 0, 1, 0.3);
-  border-color: #F0760C;
+  border-color: var(--orange);
   box-shadow: 0 0 12px rgba(240, 118, 12, 0.2);
 }
 
@@ -113,11 +131,11 @@ function importModel() {
 .model-chip {
   padding: 3px 10px;
   background: rgba(135, 4, 0, 0.2);
-  border: 1px solid #500001;
+  border: 1px solid var(--formula-red);
   border-radius: 20px;
   font-family: var(--font-mono), monospace;
   font-size: 11px;
-  color: #F0760C;
+  color: var(--orange);
 }
 
 .view-body {
@@ -161,7 +179,7 @@ function importModel() {
   font-size: 16px;
   letter-spacing: 0.08em;
   text-transform: uppercase;
-  color: #FBF5D7;
+  color: var(--beige);
   margin: 0 0 6px;
 }
 
@@ -173,16 +191,16 @@ function importModel() {
 }
 
 .modal-sub code {
-  color: #F0760C;
+  color: var(--orange);
 }
 
 .modal-input {
   width: 100%;
-  background: #0e0000;
+  background: var(--color-bg);
   border: 1px solid #3a0000;
   border-radius: 5px;
   padding: 9px 12px;
-  color: #FBF5D7;
+  color: var(--beige);
   font-family: var(--font-mono), monospace;
   font-size: 13px;
   outline: none;
@@ -191,7 +209,7 @@ function importModel() {
 }
 
 .modal-input:focus {
-  border-color: #F0760C;
+  border-color: var(--orange);
 }
 
 .modal-input::placeholder {
@@ -217,38 +235,44 @@ function importModel() {
   letter-spacing: 0.06em;
   text-transform: uppercase;
   cursor: pointer;
-  transition: border-color 0.15s, color 0.15s;
+  transition:
+    border-color 0.15s,
+    color 0.15s;
 }
 
 .modal-cancel:hover {
-  border-color: #500001;
-  color: #FBF5D7;
+  border-color: var(--formula-red);
+  color: var(--beige);
 }
 
 .modal-confirm {
   padding: 7px 16px;
-  background: #500001;
-  border: 1px solid #870400;
+  background: var(--formula-red);
+  border: 1px solid var(--dark-red);
   border-radius: 5px;
-  color: #FBF5D7;
+  color: var(--beige);
   font-family: var(--font-sans), sans-serif;
   font-size: 12px;
   font-weight: 700;
   letter-spacing: 0.06em;
   text-transform: uppercase;
   cursor: pointer;
-  transition: background 0.15s, box-shadow 0.15s;
+  transition:
+    background 0.15s,
+    box-shadow 0.15s;
 }
 
 .modal-confirm:hover {
-  background: #870400;
+  background: var(--dark-red);
   box-shadow: 0 0 12px rgba(135, 4, 0, 0.5);
 }
 
-.modal-fade-enter-active, .modal-fade-leave-active {
+.modal-fade-enter-active,
+.modal-fade-leave-active {
   transition: opacity 0.2s ease;
 }
-.modal-fade-enter-from, .modal-fade-leave-to {
+.modal-fade-enter-from,
+.modal-fade-leave-to {
   opacity: 0;
 }
 </style>

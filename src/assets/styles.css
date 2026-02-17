@@ -1,47 +1,48 @@
 @font-face {
-    font-family: "Argesta";
-    src: url("./fonts/ArgestaNerdFont-DisplayRegular.otf") format("opentype");
-    font-weight: normal;
-    font-style: normal;
+  font-family: 'Argesta';
+  src: url('./fonts/ArgestaNerdFont-DisplayRegular.otf') format('opentype');
+  font-weight: normal;
+  font-style: normal;
 }
 
 @font-face {
-    font-family: "Caskaydia";
-    src: url("./fonts/CaskaydiaCoveNerdFont-Regular.ttf") format("truetype");
-    font-weight: normal;
-    font-style: normal;
+  font-family: 'Caskaydia';
+  src: url('./fonts/CaskaydiaCoveNerdFont-Regular.ttf') format('truetype');
+  font-weight: normal;
+  font-style: normal;
 }
 
 @font-face {
-    font-family: "Caskaydia";
-    src: url("./fonts/CaskaydiaCoveNerdFont-Bold.ttf") format("truetype");
-    font-weight: bold;
-    font-style: normal;
+  font-family: 'Caskaydia';
+  src: url('./fonts/CaskaydiaCoveNerdFont-Bold.ttf') format('truetype');
+  font-weight: bold;
+  font-style: normal;
 }
 
 @font-face {
-    font-family: "Caskaydia";
-    src: url("./fonts/CaskaydiaCoveNerdFont-Italic.ttf") format("truetype");
-    font-weight: normal;
-    font-style: italic;
+  font-family: 'Caskaydia';
+  src: url('./fonts/CaskaydiaCoveNerdFont-Italic.ttf') format('truetype');
+  font-weight: normal;
+  font-style: italic;
 }
 
 @font-face {
-    font-family: "Silka";
-    src: url("./fonts/SilkaMonoNerdFont-Regular.otf") format("opentype");
-    font-weight: normal;
-    font-style: normal;
+  font-family: 'Silka';
+  src: url('./fonts/SilkaMonoNerdFont-Regular.otf') format('opentype');
+  font-weight: normal;
+  font-style: normal;
 }
 
 :root {
-  --font-mono: "Silka", monospace;
-  --font-serif: "Argesta", serif;
-  --font-sans: "Caskaydia", sans-serif;
+  --font-mono: 'Silka', monospace;
+  --font-serif: 'Argesta', serif;
+  --font-sans: 'Caskaydia', sans-serif;
   --beige: #fbf5d7;
   --orange: #f0760c;
   --dark-red: #870400;
   --formula-red: #500001;
   --smoky-black: #1b0000;
+  --color-bg: #0e0000;
 }
 
 *,
@@ -55,8 +56,8 @@
 html,
 body {
   height: 100%;
-  background: #0e0000;
-  color: #fbf5d7;
+  background: var(--color-bg);
+  color: var(--beige);
 }
 
 #app {
@@ -81,7 +82,7 @@ body {
   display: flex;
   align-items: center;
   justify-content: center;
-  font-family: 'JetBrains Mono', monospace;
+  font-family: var(--font-mono), monospace;
   font-size: 13px;
   color: #2e0000;
   letter-spacing: 0.05em;

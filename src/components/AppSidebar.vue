@@ -144,7 +144,7 @@ const tabs = [
   font-weight: 800;
   font-size: 1rem;
   letter-spacing: 0.12em;
-  color: #fbf5d7;
+  color: var(--beige);
   white-space: nowrap;
 }
 
@@ -178,12 +178,12 @@ const tabs = [
 
 .tab-btn:hover {
   background: rgba(135, 4, 0, 0.15);
-  color: #fbf5d7;
+  color: var(--beige);
 }
 
 .tab-btn.active {
   background: rgba(135, 4, 0, 0.25);
-  color: #f0760c;
+  color: var(--orange);
 }
 
 .tab-icon {
@@ -215,7 +215,7 @@ const tabs = [
   transform: translateY(-50%);
   width: 3px;
   height: 60%;
-  background: #f0760c;
+  background: var(--orange);
   border-radius: 2px 0 0 2px;
   box-shadow: 0 0 8px rgba(240, 118, 12, 0.6);
 }
@@ -257,7 +257,7 @@ const tabs = [
 }
 
 .collapse-toggle:hover {
-  color: #f0760c;
+  color: var(--orange);
   background: #2e0000;
   box-shadow: 0 0 10px rgba(240, 118, 12, 0.3);
 }

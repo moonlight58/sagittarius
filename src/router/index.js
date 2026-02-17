@@ -17,6 +17,11 @@ const router = createRouter({
       path: '/mail',
       name: 'mail',
       component: () => import('../views/MailView.vue'),
+    },
+    {
+      path: '/calendar',
+      name: 'calendar',
+      component: () => import('../views/CalendarView.vue'),
     }
   ],
 })
