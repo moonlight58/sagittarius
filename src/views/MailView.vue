@@ -1,275 +1,109 @@
 <script setup>
-import { ref } from 'vue'
+import { computed } from 'vue'
+import ViewTopbar from '../components/ViewTopbar.vue'
+import PromptBar from '../components/PromptBar.vue'
+import ChatView from '../components/ChatView.vue'
+import { useChat } from '../composables/useChat.js'
 
-const showOllamaModal = ref(false)
-const modelInput = ref('')
-const importedModels = ref([])
+const { activeChat, activeModel, submitPrompt } = useChat('mail')
 
-function importModel() {
-  const name = modelInput.value.trim()
-  if (name && !importedModels.value.includes(name)) {
-    importedModels.value.push(name)
-  }
-  modelInput.value = ''
-  showOllamaModal.value = false
-}
+const hasActiveChat = computed(() => !!activeChat.value)
+const canSubmit = computed(() => !!activeModel.value)
 </script>
 
 <template>
   <div class="view-root">
-    <header class="view-topbar">
-      <button class="ollama-btn" @click="showOllamaModal = true">
-        <svg
-          xmlns="http://www.w3.org/2000/svg"
-          viewBox="0 0 24 24"
-          fill="none"
-          stroke="currentColor"
-          stroke-width="1.8"
-          stroke-linecap="round"
-          stroke-linejoin="round"
-        >
-          <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
-          <polyline points="17 8 12 3 7 8" />
-          <line x1="12" y1="3" x2="12" y2="15" />
-        </svg>
-        <span>Import Ollama Model</span>
-      </button>
-
-      <div v-if="importedModels.length" class="model-chips">
-        <span v-for="m in importedModels" :key="m" class="model-chip">{{ m }}</span>
-      </div>
-    </header>
-
-    <div class="view-body">
-      <p class="placeholder-text">Mail workspace</p>
-    </div>
-
-    <Transition name="modal-fade">
-      <div v-if="showOllamaModal" class="modal-overlay" @click.self="showOllamaModal = false">
-        <div class="modal">
-          <h3 class="modal-title">Import Ollama Model</h3>
-          <p class="modal-sub">
-            Enter the model name (e.g. <code>llama3</code>, <code>mistral</code>)
-          </p>
-          <input
-            v-model="modelInput"
-            class="modal-input"
-            placeholder="model:tag"
-            @keyup.enter="importModel"
-            autofocus
-          />
-          <div class="modal-actions">
-            <button class="modal-cancel" @click="showOllamaModal = false">Cancel</button>
-            <button class="modal-confirm" @click="importModel">Import</button>
-          </div>
+    <ViewTopbar tab="mail" />
+    <Transition name="view-switch" mode="out-in">
+      <div v-if="!hasActiveChat" key="empty" class="empty-state">
+        <div class="empty-logo">
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 500 500" class="logo-svg">
+            <g
+              transform="matrix(0.058485, 0, 0, -0.058485, 97.288071, 391.514526)"
+              fill="currentColor"
+              stroke="none"
+            >
+              <path
+                d="M201 4968 c-19 -7 -54 -30 -77 -52 -118 -114 -92 -323 85 -676 500 -994 2257 -2848 3571 -3767 392 -274 754 -453 952 -469 130 -11 223 30 271 120 19 35 22 56 22 146 -1 92 -5 117 -34 200 -80 234 -241 515 -508 887 l-125 175 50 112 c133 298 191 596 179 925 -11 318 -87 603 -232 878 -321 607 -907 1005 -1595 1084 -146 16 -433 6 -576 -20 -185 -34 -345 -85 -516 -164 l-87 -39 -108 79 c-369 272 -712 473 -942 550 -86 29 -124 37 -201 39 -55 2 -110 -2 -129 -8z m2654 -986 c459 -104 834 -392 1041 -798 57 -114 111 -266 140 -404 27 -122 27 -458 0 -580 -43 -200 -116 -381 -216 -535 -99 -153 -172 -205 -286 -205 -91 0 -136 21 -279 130 -608 462 -1192 1049 -1643 1650 -88 118 -102 151 -102 237 0 142 78 231 310 356 145 78 299 130 480 163 115 20 439 12 555 -14z"
+              />
+              <path
+                d="M 774.177 2970.64 C 751.924 2950.76 731.45 2892.86 702.965 2770.99 C 664.687 2609.37 652.225 2379.45 671.808 2204.86 C 708.305 1873.84 858.743 1528.11 1078.62 1267.1 C 1148.95 1184.12 1309.17 1034.6 1392.85 974.114 C 1755.14 711.357 2210.9 587.762 2656.88 630.113 C 2812.66 645.67 3025.41 691.478 3069.92 720 C 3092.17 734.693 3105.52 775.316 3096.62 802.974 C 3091.28 818.531 2818 1046.7 2760.14 1083 C 2739.67 1096.83 2728.99 1096.83 2650.65 1087.32 C 2534.04 1073.5 2321.29 1082.14 2210.9 1105.49 C 2085.4 1131.4 2023.09 1153.02 1894.9 1214.37 C 1626.07 1342.29 1418.66 1538.49 1286.02 1787.4 C 1183.66 1982.74 1144.49 2127.07 1136.48 2339.7 C 1132.91 2430.45 1135.59 2507.37 1142.71 2557.49 C 1152.5 2627.51 1151.61 2637.87 1138.26 2658.62 C 1116.89 2689.74 921.946 2917.91 883.669 2956.82 C 844.501 2995.7 808.894 3000.03 774.177 2970.64 Z"
+                transform="matrix(0.999997, -0.002458, 0.002458, 0.999997, -0.000001, 0)"
+              />
+            </g>
+          </svg>
+          <span v-if="!canSubmit" class="empty-hint">Import an Ollama model to start</span>
         </div>
+        <PromptBar
+          :disabled="!canSubmit"
+          :placeholder="canSubmit ? 'Compose a new mail...' : 'No model selected'"
+          @submit="submitPrompt"
+        />
       </div>
+      <ChatView v-else key="chat" :chat="activeChat" @submit="submitPrompt" />
     </Transition>
   </div>
 </template>
 
 <style scoped>
-@import url('https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700&family=JetBrains+Mono:wght@300;400&display=swap');
-
 .view-root {
   display: flex;
   flex-direction: column;
   height: 100%;
   background: var(--color-bg);
+  overflow: hidden;
 }
 
-.view-topbar {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-  padding: 12px 20px;
-  border-bottom: 1px solid #1f0000;
-  flex-wrap: wrap;
-}
-
-.ollama-btn {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  padding: 7px 14px;
-  background: transparent;
-  border: 1px solid var(--formula-red);
-  border-radius: 5px;
-  color: var(--beige);
-  font-family: 'Syne', sans-serif;
-  font-size: 12px;
-  font-weight: 600;
-  letter-spacing: 0.06em;
-  text-transform: uppercase;
-  cursor: pointer;
-  transition:
-    background 0.15s,
-    border-color 0.15s,
-    box-shadow 0.15s;
-}
-
-.ollama-btn svg {
-  width: 15px;
-  height: 15px;
-  color: var(--orange);
-}
-
-.ollama-btn:hover {
-  background: rgba(80, 0, 1, 0.3);
-  border-color: var(--orange);
-  box-shadow: 0 0 12px rgba(240, 118, 12, 0.2);
-}
-
-.model-chips {
-  display: flex;
-  gap: 6px;
-  flex-wrap: wrap;
-}
-
-.model-chip {
-  padding: 3px 10px;
-  background: rgba(135, 4, 0, 0.2);
-  border: 1px solid var(--formula-red);
-  border-radius: 20px;
-  font-family: 'JetBrains Mono', monospace;
-  font-size: 11px;
-  color: var(--orange);
-}
-
-.view-body {
+.empty-state {
   flex: 1;
   display: flex;
+  flex-direction: column;
   align-items: center;
-  justify-content: center;
+  justify-content: flex-end;
+  padding-bottom: 10vh;
+  gap: 32px;
 }
 
-.placeholder-text {
-  font-family: 'JetBrains Mono', monospace;
-  font-size: 13px;
-  color: #2e0000;
+.empty-logo {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 18px;
+}
+
+.logo-svg {
+  width: 110px;
+  height: 110px;
+  color: #5a1a10;
+  filter: drop-shadow(0 0 24px rgba(135, 4, 0, 0.25));
+  animation: logo-pulse 4s ease-in-out infinite;
+}
+
+@keyframes logo-pulse {
+  0%,
+  100% {
+    opacity: 0.6;
+    filter: drop-shadow(0 0 24px rgba(135, 4, 0, 0.2));
+  }
+  50% {
+    opacity: 1;
+    filter: drop-shadow(0 0 36px rgba(240, 118, 12, 0.25));
+  }
+}
+
+.empty-hint {
+  font-family: var(--font-mono), monospace;
+  font-size: 12px;
+  color: #4a2020;
   letter-spacing: 0.05em;
 }
 
-.modal-overlay {
-  position: fixed;
-  inset: 0;
-  background: rgba(0, 0, 0, 0.7);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  z-index: 100;
-  backdrop-filter: blur(4px);
-}
-
-.modal {
-  background: #160000;
-  border: 1px solid #3a0000;
-  border-radius: 8px;
-  padding: 28px;
-  width: 360px;
-  box-shadow: 0 0 40px rgba(135, 4, 0, 0.3);
-}
-
-.modal-title {
-  font-family: 'Syne', sans-serif;
-  font-weight: 700;
-  font-size: 16px;
-  letter-spacing: 0.08em;
-  text-transform: uppercase;
-  color: var(--beige);
-  margin: 0 0 6px;
-}
-
-.modal-sub {
-  font-size: 13px;
-  color: #7a3030;
-  margin: 0 0 18px;
-  font-family: 'JetBrains Mono', monospace;
-}
-
-.modal-sub code {
-  color: var(--orange);
-}
-
-.modal-input {
-  width: 100%;
-  background: var(--color-bg);
-  border: 1px solid #3a0000;
-  border-radius: 5px;
-  padding: 9px 12px;
-  color: var(--beige);
-  font-family: 'JetBrains Mono', monospace;
-  font-size: 13px;
-  outline: none;
-  box-sizing: border-box;
-  transition: border-color 0.15s;
-}
-
-.modal-input:focus {
-  border-color: var(--orange);
-}
-
-.modal-input::placeholder {
-  color: #3a0000;
-}
-
-.modal-actions {
-  display: flex;
-  justify-content: flex-end;
-  gap: 10px;
-  margin-top: 18px;
-}
-
-.modal-cancel {
-  padding: 7px 16px;
-  background: transparent;
-  border: 1px solid #2e0000;
-  border-radius: 5px;
-  color: #7a3030;
-  font-family: 'Syne', sans-serif;
-  font-size: 12px;
-  font-weight: 600;
-  letter-spacing: 0.06em;
-  text-transform: uppercase;
-  cursor: pointer;
-  transition:
-    border-color 0.15s,
-    color 0.15s;
-}
-
-.modal-cancel:hover {
-  border-color: var(--formula-red);
-  color: var(--beige);
-}
-
-.modal-confirm {
-  padding: 7px 16px;
-  background: var(--formula-red);
-  border: 1px solid var(--dark-red);
-  border-radius: 5px;
-  color: var(--beige);
-  font-family: 'Syne', sans-serif;
-  font-size: 12px;
-  font-weight: 700;
-  letter-spacing: 0.06em;
-  text-transform: uppercase;
-  cursor: pointer;
-  transition:
-    background 0.15s,
-    box-shadow 0.15s;
-}
-
-.modal-confirm:hover {
-  background: var(--dark-red);
-  box-shadow: 0 0 12px rgba(135, 4, 0, 0.5);
-}
-
-.modal-fade-enter-active,
-.modal-fade-leave-active {
+.view-switch-enter-active,
+.view-switch-leave-active {
   transition: opacity 0.2s ease;
 }
-.modal-fade-enter-from,
-.modal-fade-leave-to {
+.view-switch-enter-from,
+.view-switch-leave-to {
   opacity: 0;
 }
 </style>
