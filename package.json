@@ -15,6 +15,7 @@
     "netlify-cli": "^23.15.1",
     "ollama": "^0.6.3",
     "pinia": "^3.0.4",
+    "serve": "^14.2.5",
     "vue": "beta",
     "vue-router": "^5.0.2"
   },
