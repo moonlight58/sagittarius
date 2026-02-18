@@ -1,6 +1,6 @@
 import { ref, reactive, computed, watch } from 'vue'
+import { ollamaHost } from './useSettings.js'
 
-const OLLAMA_HOST = 'http://localhost:11434'
 
 // ── Shared model state ────────────────────────────────────────────────────
 const importedModels = ref([])
@@ -29,7 +29,7 @@ async function fetchModels() {
   modelsLoading.value = true
   modelsError.value = ''
   try {
-    const res = await fetch(`${OLLAMA_HOST}/api/tags`)
+    const res = await fetch(`${ollamaHost.value}/api/tags`)
     if (!res.ok) throw new Error(`Ollama responded with ${res.status}`)
     const data = await res.json()
     importedModels.value = (data.models ?? []).map((m) => m.name)
@@ -91,7 +91,7 @@ let nextId = Date.now()
 // ── Ollama streaming chat ─────────────────────────────────────────────────
 async function streamChat(model, messages, onChunk, onDone, onError) {
   try {
-    const res = await fetch(`${OLLAMA_HOST}/api/chat`, {
+    const res = await fetch(`${ollamaHost.value}/api/chat`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
@@ -140,7 +140,9 @@ async function streamChat(model, messages, onChunk, onDone, onError) {
 export function useChat(tab) {
   const { chats, activeChatId } = tabStates[tab]
 
-  const activeChat = computed(() => chats.value.find((c) => c.id === activeChatId.value) ?? null)
+  const activeChat = computed(
+    () => chats.value.find((c) => c.id === activeChatId.value) ?? null,
+  )
 
   function importModel() {
     return fetchModels()
@@ -181,12 +183,8 @@ export function useChat(tab) {
     await streamChat(
       chat.model,
       chat.messages.slice(0, -1),
-      (token) => {
-        assistantMsg.content += token
-      },
-      () => {
-        assistantMsg.streaming = false
-      },
+      (token) => { assistantMsg.content += token },
+      () => { assistantMsg.streaming = false },
       (err) => {
         assistantMsg.content = ''
         assistantMsg.error = err

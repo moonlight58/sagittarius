@@ -1,28 +1,26 @@
 <script setup>
 import { ref } from 'vue'
 import OllamaModal from './OllamaModal.vue'
+import SettingsModal from './SettingsModal.vue'
 import { useChat } from '../composables/useChat.js'
 
 const props = defineProps({
   tab: { type: String, required: true },
 })
 
-const {
-  importedModels,
-  activeModel,
-  modelsLoading,
-  modelsError,
-  refreshModels,
-  importModel,
-  selectModel,
-} = useChat(props.tab)
+const { importedModels, activeModel, modelsLoading, modelsError, refreshModels, importModel, selectModel } = useChat(props.tab)
 
 const showModal = ref(false)
 const showModelDropdown = ref(false)
+const showSettings = ref(false)
 
 function onImport(name) {
-  importModel(name) // refreshes model list from Ollama
+  importModel(name)
   showModal.value = false
+}
+
+function onSettingsSaved() {
+  refreshModels()
 }
 
 function pickModel(name) {
@@ -33,6 +31,7 @@ function pickModel(name) {
 
 <template>
   <header class="topbar">
+
     <!-- Loading state -->
     <div v-if="modelsLoading" class="status-pill loading">
       <span class="spinner" />
@@ -41,21 +40,12 @@ function pickModel(name) {
 
     <!-- Error state -->
     <div v-else-if="modelsError" class="status-pill error">
-      <svg
-        xmlns="http://www.w3.org/2000/svg"
-        viewBox="0 0 24 24"
-        fill="none"
-        stroke="currentColor"
-        stroke-width="2"
-        stroke-linecap="round"
-        stroke-linejoin="round"
-      >
-        <circle cx="12" cy="12" r="10" />
-        <line x1="12" y1="8" x2="12" y2="12" />
-        <line x1="12" y1="16" x2="12.01" y2="16" />
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/>
       </svg>
       <span>{{ modelsError }}</span>
       <button class="retry-btn" @click="refreshModels">Retry</button>
+      <button class="retry-btn" @click="showSettings = true">Configure</button>
     </div>
 
     <!-- Model selector -->
@@ -104,38 +94,16 @@ function pickModel(name) {
     </div>
 
     <!-- Refresh button -->
-    <button
-      class="icon-btn"
-      @click="refreshModels"
-      title="Refresh model list"
-      :disabled="modelsLoading"
-    >
-      <svg
-        xmlns="http://www.w3.org/2000/svg"
-        viewBox="0 0 24 24"
-        fill="none"
-        stroke="currentColor"
-        stroke-width="1.8"
-        stroke-linecap="round"
-        stroke-linejoin="round"
-        :class="{ spinning: modelsLoading }"
-      >
-        <polyline points="23 4 23 10 17 10" />
-        <path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10" />
+    <button class="icon-btn" @click="refreshModels" title="Refresh model list" :disabled="modelsLoading">
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" :class="{ spinning: modelsLoading }">
+        <polyline points="23 4 23 10 17 10"/>
+        <path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"/>
       </svg>
     </button>
 
     <!-- Pull model button -->
     <button class="ollama-btn" @click="showModal = true">
-      <svg
-        xmlns="http://www.w3.org/2000/svg"
-        viewBox="0 0 24 24"
-        fill="none"
-        stroke="currentColor"
-        stroke-width="1.8"
-        stroke-linecap="round"
-        stroke-linejoin="round"
-      >
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
         <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
         <polyline points="17 8 12 3 7 8" />
         <line x1="12" y1="3" x2="12" y2="15" />
@@ -143,7 +111,17 @@ function pickModel(name) {
       <span>Pull Model</span>
     </button>
 
+    <!-- Settings button -->
+    <button class="icon-btn" @click="showSettings = true" title="Connection settings">
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+        <circle cx="12" cy="12" r="3"/>
+        <path d="M19.07 4.93a10 10 0 0 1 0 14.14M4.93 4.93a10 10 0 0 0 0 14.14"/>
+        <path d="M15.54 8.46a5 5 0 0 1 0 7.07M8.46 8.46a5 5 0 0 0 0 7.07"/>
+      </svg>
+    </button>
+
     <OllamaModal v-model="showModal" @import="onImport" />
+    <SettingsModal v-model="showSettings" @saved="onSettingsSaved" />
   </header>
 </template>
 
@@ -158,7 +136,6 @@ function pickModel(name) {
   flex-wrap: wrap;
 }
 
-/* Status pills */
 .status-pill {
   display: flex;
   align-items: center;
@@ -204,17 +181,13 @@ function pickModel(name) {
   text-transform: uppercase;
   padding: 2px 8px;
   cursor: pointer;
-  transition:
-    background 0.15s,
-    border-color 0.15s;
+  transition: background 0.15s, border-color 0.15s;
 }
-
 .retry-btn:hover {
   background: rgba(180, 30, 10, 0.15);
   border-color: #e07060;
 }
 
-/* Spinner */
 .spinner {
   width: 11px;
   height: 11px;
@@ -225,17 +198,10 @@ function pickModel(name) {
   flex-shrink: 0;
 }
 
-@keyframes spin {
-  to {
-    transform: rotate(360deg);
-  }
-}
+@keyframes spin { to { transform: rotate(360deg); } }
 
-.spinning {
-  animation: spin 0.7s linear infinite;
-}
+.spinning { animation: spin 0.7s linear infinite; }
 
-/* Icon button (refresh) */
 .icon-btn {
   width: 30px;
   height: 30px;
@@ -247,31 +213,14 @@ function pickModel(name) {
   border-radius: 5px;
   color: #5a3020;
   cursor: pointer;
-  transition:
-    color 0.15s,
-    border-color 0.15s;
+  transition: color 0.15s, border-color 0.15s;
   padding: 0;
 }
+.icon-btn svg { width: 13px; height: 13px; }
+.icon-btn:hover:not(:disabled) { color: var(--orange); border-color: #5a2010; }
+.icon-btn:disabled { opacity: 0.4; cursor: default; }
 
-.icon-btn svg {
-  width: 13px;
-  height: 13px;
-}
-
-.icon-btn:hover:not(:disabled) {
-  color: var(--orange);
-  border-color: #5a2010;
-}
-
-.icon-btn:disabled {
-  opacity: 0.4;
-  cursor: default;
-}
-
-/* Model selector */
-.model-selector {
-  position: relative;
-}
+.model-selector { position: relative; }
 
 .model-current {
   display: flex;
@@ -285,16 +234,10 @@ function pickModel(name) {
   font-family: var(--font-mono), monospace;
   font-size: 12px;
   cursor: pointer;
-  transition:
-    border-color 0.15s,
-    background 0.15s;
+  transition: border-color 0.15s, background 0.15s;
   white-space: nowrap;
 }
-
-.model-current:hover {
-  border-color: #7a2a2a;
-  background: rgba(135, 4, 0, 0.18);
-}
+.model-current:hover { border-color: #7a2a2a; background: rgba(135, 4, 0, 0.18); }
 
 .model-dot {
   width: 6px;
@@ -303,7 +246,6 @@ function pickModel(name) {
   background: #4a2020;
   flex-shrink: 0;
 }
-
 .model-dot.active {
   background: var(--orange);
   box-shadow: 0 0 6px rgba(240, 118, 12, 0.5);
@@ -315,9 +257,7 @@ function pickModel(name) {
   color: #7a3030;
   transition: transform 0.2s ease;
 }
-.chevron.open {
-  transform: rotate(180deg);
-}
+.chevron.open { transform: rotate(180deg); }
 
 .model-dropdown {
   position: absolute;
@@ -329,7 +269,7 @@ function pickModel(name) {
   border-radius: 6px;
   overflow: hidden;
   z-index: 50;
-  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.5);
+  box-shadow: 0 8px 24px rgba(0,0,0,0.5);
 }
 
 .model-option {
@@ -345,21 +285,12 @@ function pickModel(name) {
   font-size: 12px;
   cursor: pointer;
   text-align: left;
-  transition:
-    background 0.12s,
-    color 0.12s;
+  transition: background 0.12s, color 0.12s;
   white-space: nowrap;
 }
+.model-option:hover { background: rgba(135, 4, 0, 0.15); color: var(--beige); }
+.model-option.active { color: var(--orange); }
 
-.model-option:hover {
-  background: rgba(135, 4, 0, 0.15);
-  color: var(--beige);
-}
-.model-option.active {
-  color: var(--orange);
-}
-
-/* Pull button */
 .ollama-btn {
   display: flex;
   align-items: center;
@@ -375,32 +306,19 @@ function pickModel(name) {
   letter-spacing: 0.06em;
   text-transform: uppercase;
   cursor: pointer;
-  transition:
-    background 0.15s,
-    border-color 0.15s,
-    box-shadow 0.15s;
+  transition: background 0.15s, border-color 0.15s, box-shadow 0.15s;
 }
-
-.ollama-btn svg {
-  width: 14px;
-  height: 14px;
-  color: var(--orange);
-}
-
+.ollama-btn svg { width: 14px; height: 14px; color: var(--orange); }
 .ollama-btn:hover {
   background: rgba(80, 0, 1, 0.3);
   border-color: var(--orange);
   box-shadow: 0 0 12px rgba(240, 118, 12, 0.15);
 }
 
-.dropdown-fade-enter-active,
-.dropdown-fade-leave-active {
-  transition:
-    opacity 0.15s ease,
-    transform 0.15s ease;
+.dropdown-fade-enter-active, .dropdown-fade-leave-active {
+  transition: opacity 0.15s ease, transform 0.15s ease;
 }
-.dropdown-fade-enter-from,
-.dropdown-fade-leave-to {
+.dropdown-fade-enter-from, .dropdown-fade-leave-to {
   opacity: 0;
   transform: translateY(-4px);
 }
