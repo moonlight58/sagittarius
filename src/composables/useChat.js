@@ -1,31 +1,57 @@
-import { ref, computed, watch } from 'vue'
+import { ref, reactive, computed, watch } from 'vue'
 
-// Shared models across tabs
+const OLLAMA_HOST = 'http://localhost:11434'
+
+// ── Shared model state ────────────────────────────────────────────────────
 const importedModels = ref([])
 const activeModel = ref(null)
+const modelsLoading = ref(false)
+const modelsError = ref('')
 
-function loadModels() {
+function loadActiveModel() {
   try {
-    const raw = localStorage.getItem('sagittarius:models')
-    if (raw) {
-      const parsed = JSON.parse(raw)
-      importedModels.value = parsed.models ?? []
-      activeModel.value = parsed.activeModel ?? null
-    }
+    const raw = localStorage.getItem('sagittarius:activeModel')
+    if (raw) activeModel.value = raw
   } catch {}
 }
 
-function saveModels() {
-  localStorage.setItem(
-    'sagittarius:models',
-    JSON.stringify({ models: importedModels.value, activeModel: activeModel.value }),
-  )
+function saveActiveModel() {
+  if (activeModel.value) {
+    localStorage.setItem('sagittarius:activeModel', activeModel.value)
+  } else {
+    localStorage.removeItem('sagittarius:activeModel')
+  }
 }
 
-loadModels()
-watch([importedModels, activeModel], saveModels, { deep: true })
+watch(activeModel, saveActiveModel)
 
-// Per-tab state factory
+async function fetchModels() {
+  modelsLoading.value = true
+  modelsError.value = ''
+  try {
+    const res = await fetch(`${OLLAMA_HOST}/api/tags`)
+    if (!res.ok) throw new Error(`Ollama responded with ${res.status}`)
+    const data = await res.json()
+    importedModels.value = (data.models ?? []).map((m) => m.name)
+
+    loadActiveModel()
+    if (!activeModel.value || !importedModels.value.includes(activeModel.value)) {
+      activeModel.value = importedModels.value[0] ?? null
+    }
+  } catch (err) {
+    modelsError.value =
+      err.message.includes('fetch') || err.message.includes('NetworkError')
+        ? 'Cannot reach Ollama on localhost:11434'
+        : err.message
+    importedModels.value = []
+  } finally {
+    modelsLoading.value = false
+  }
+}
+
+fetchModels()
+
+// ── Per-tab state factory ─────────────────────────────────────────────────
 function createTabState(tab) {
   const storageKey = `sagittarius:chats:${tab}`
   const chats = ref([])
@@ -62,24 +88,66 @@ const tabStates = {
 
 let nextId = Date.now()
 
+// ── Ollama streaming chat ─────────────────────────────────────────────────
+async function streamChat(model, messages, onChunk, onDone, onError) {
+  try {
+    const res = await fetch(`${OLLAMA_HOST}/api/chat`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        model,
+        messages: messages.map((m) => ({ role: m.role, content: m.content })),
+        stream: true,
+      }),
+    })
+
+    if (!res.ok) {
+      const text = await res.text()
+      throw new Error(`Ollama error ${res.status}: ${text}`)
+    }
+
+    const reader = res.body.getReader()
+    const decoder = new TextDecoder()
+    let buffer = ''
+
+    while (true) {
+      const { value, done } = await reader.read()
+      if (done) break
+
+      buffer += decoder.decode(value, { stream: true })
+      const lines = buffer.split('\n')
+      buffer = lines.pop()
+
+      for (const line of lines) {
+        if (!line.trim()) continue
+        try {
+          const obj = JSON.parse(line)
+          if (obj.message?.content) onChunk(obj.message.content)
+          if (obj.done) onDone()
+        } catch {}
+      }
+    }
+  } catch (err) {
+    onError(
+      err.message.includes('fetch') || err.message.includes('NetworkError')
+        ? 'Cannot reach Ollama. Is it still running?'
+        : err.message,
+    )
+  }
+}
+
+// ── Public composable ─────────────────────────────────────────────────────
 export function useChat(tab) {
   const { chats, activeChatId } = tabStates[tab]
 
-  const activeChat = computed(
-    () => chats.value.find((c) => c.id === activeChatId.value) ?? null,
-  )
+  const activeChat = computed(() => chats.value.find((c) => c.id === activeChatId.value) ?? null)
 
-  function importModel(name) {
-    if (!importedModels.value.includes(name)) {
-      importedModels.value.push(name)
-      if (!activeModel.value) activeModel.value = name
-    }
-    saveModels()
+  function importModel() {
+    return fetchModels()
   }
 
   function selectModel(name) {
     activeModel.value = name
-    saveModels()
   }
 
   function selectChat(id) {
@@ -98,23 +166,41 @@ export function useChat(tab) {
     }
   }
 
-  function sendMessage(content) {
-    const chat = activeChat.value
-    if (!chat || !content.trim()) return
+  async function sendMessage(chat, content) {
     chat.messages.push({ role: 'user', content: content.trim(), ts: Date.now() })
-    setTimeout(() => {
-      chat.messages.push({
-        role: 'assistant',
-        content: `[${chat.model ?? 'no model'}] Response to: "${content.trim().slice(0, 60)}..."`,
-        ts: Date.now(),
-      })
-    }, 600)
+
+    const assistantMsg = reactive({
+      role: 'assistant',
+      content: '',
+      ts: Date.now(),
+      streaming: true,
+      error: null,
+    })
+    chat.messages.push(assistantMsg)
+
+    await streamChat(
+      chat.model,
+      chat.messages.slice(0, -1),
+      (token) => {
+        assistantMsg.content += token
+      },
+      () => {
+        assistantMsg.streaming = false
+      },
+      (err) => {
+        assistantMsg.content = ''
+        assistantMsg.error = err
+        assistantMsg.streaming = false
+      },
+    )
   }
 
-  function submitPrompt(content) {
-    if (!activeChat.value) {
+  async function submitPrompt(content) {
+    let chat = activeChat.value
+
+    if (!chat) {
       const id = nextId++
-      const chat = {
+      chat = {
         id,
         title: content.trim().slice(0, 40) || 'New chat',
         model: activeModel.value,
@@ -122,10 +208,9 @@ export function useChat(tab) {
       }
       chats.value.unshift(chat)
       activeChatId.value = id
-      sendMessage(content)
-    } else {
-      sendMessage(content)
     }
+
+    await sendMessage(chat, content)
   }
 
   return {
@@ -134,6 +219,9 @@ export function useChat(tab) {
     activeChatId,
     importedModels,
     activeModel,
+    modelsLoading,
+    modelsError,
+    refreshModels: fetchModels,
     importModel,
     selectModel,
     selectChat,
