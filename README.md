@@ -24,18 +24,22 @@
 > Sagittarius is currently in early development, and features are subject to change. Stay tuned for updates and new functionalities!
 
 ## Installation
+
 1. Clone the repository:
+
 ```bash
 git clone https://github.com/moonlight58/sagittarius.git
 cd sagittarius
 ```
 
 2. Install dependencies:
+
 ```bash
 npm install
 ```
 
 3. Start the development server:
+
 ```bash
 npm run dev
 ```
@@ -50,15 +54,15 @@ npm run dev
 sudo nano /etc/systemd/system/sagittarius.service
 ```
 
-<h3 style="color: yellow">⚠︎ Important:</h3> 
+> [!IMPORTANT]
+> make sure you install `serve` globally to serve the production build:
 
-make sure you install `serve` globally to serve the production build:
 ```bash
 npm install -g serve
 ```
 
-
 Add the following content to the file:
+
 ```ini
 [Unit]
 Description=Sagittarius Local Platform
@@ -73,16 +77,20 @@ Restart=on-failure
 [Install]
 WantedBy=multi-user.target
 ```
+
 Replace `/path/to/sagittarius` with the actual path to your cloned repository.
 
 5. Enable and start the service:
+
 ```bash
 sudo systemctl enable sagittarius
 sudo systemctl start sagittarius
 ```
 
 ## Contributing
+
 Contributions are welcome! Please fork the repository and submit a pull request with your changes.
 
 ## License
+
 This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
