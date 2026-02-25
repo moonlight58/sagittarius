@@ -20,6 +20,9 @@
 - **Local LLM Hosting**: Host your own language models locally using Ollama, ensuring data privacy and control.
 - **User-Friendly Interface**: A sleek and intuitive interface built with Vue.js for easy interaction with your local LLMs.
 
+> [!NOTE]
+> Sagittarius is currently in early development, and features are subject to change. Stay tuned for updates and new functionalities!
+
 ## Installation
 1. Clone the repository:
 ```bash
