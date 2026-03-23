@@ -94,24 +94,25 @@ function submit() {
   display: flex;
   align-items: flex-end;
   gap: 0;
-  background: #2a1515;
-  border: 1px solid #6a4a3a;
+  background: var(--promptbar-bg);
+  border: 1px solid var(--promptbar-border);
   border-radius: 10px;
   padding: 4px 4px 4px 16px;
   transition:
-    border-color 0.2s ease,
-    box-shadow 0.2s ease;
+    border-color 0.25s ease,
+    box-shadow 0.25s ease,
+    background 0.25s ease;
 }
 
 .promptbar:focus-within {
-  border-color: #a75c3a;
+  border-color: var(--promptbar-focus-border);
   box-shadow:
-    0 0 0 1px rgba(167, 92, 58, 0.15),
-    0 4px 24px rgba(0, 0, 0, 0.2);
+    0 0 0 1px rgba(240, 118, 12, 0.12),
+    0 4px 24px rgba(0, 0, 0, 0.1);
 }
 
 .promptbar.focused {
-  border-color: #956a45;
+  border-color: var(--promptbar-focus-border);
 }
 
 .promptbar-input {
@@ -119,7 +120,7 @@ function submit() {
   background: transparent;
   border: none;
   outline: none;
-  color: #e8dcc8;
+  color: var(--promptbar-input-color);
   font-family: var(--font-mono), monospace;
   font-size: 13.5px;
   line-height: 1.6;
@@ -129,18 +130,17 @@ function submit() {
   max-height: 240px;
   overflow-y: auto;
   scrollbar-width: thin;
-  scrollbar-color: #5a3a2a transparent;
+  scrollbar-color: var(--promptbar-border) transparent;
+  transition: color 0.25s ease;
 }
 
 .promptbar-input::placeholder {
-  color: #8a6a5a;
+  color: var(--promptbar-placeholder);
 }
 
-.promptbar-input::-webkit-scrollbar {
-  width: 4px;
-}
+.promptbar-input::-webkit-scrollbar { width: 4px; }
 .promptbar-input::-webkit-scrollbar-thumb {
-  background: #3a1010;
+  background: var(--promptbar-border);
   border-radius: 2px;
 }
 
@@ -149,26 +149,23 @@ function submit() {
   width: 36px;
   height: 36px;
   margin: 4px;
-  background: #3a2520;
-  border: 1px solid #5a4030;
+  background: var(--promptbar-send-bg);
+  border: 1px solid var(--promptbar-send-border);
   border-radius: 7px;
   display: flex;
   align-items: center;
   justify-content: center;
   cursor: pointer;
-  color: #8a7060;
+  color: var(--promptbar-send-color);
   transition:
-    background 0.15s,
-    border-color 0.15s,
-    color 0.15s,
-    box-shadow 0.15s;
+    background 0.25s,
+    border-color 0.25s,
+    color 0.25s,
+    box-shadow 0.25s;
   align-self: flex-end;
 }
 
-.promptbar-send svg {
-  width: 15px;
-  height: 15px;
-}
+.promptbar-send svg { width: 15px; height: 15px; }
 
 .promptbar-send.active {
   background: #c84a30;
@@ -182,14 +179,13 @@ function submit() {
   box-shadow: 0 0 18px rgba(200, 74, 48, 0.35);
 }
 
-.promptbar-send:disabled:not(.active) {
-  cursor: default;
-}
+.promptbar-send:disabled:not(.active) { cursor: default; }
 
 .promptbar-hint {
   font-family: var(--font-mono), monospace;
   font-size: 10px;
-  color: #6a5a4a;
+  color: var(--promptbar-hint-color);
   letter-spacing: 0.04em;
+  transition: color 0.25s ease;
 }
 </style>

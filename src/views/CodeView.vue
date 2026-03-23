@@ -95,6 +95,6 @@ const canSubmit = computed(() => !!activeModel.value)
   letter-spacing: 0.05em;
 }
 
-.view-switch-enter-active, .view-switch-leave-active { transition: opacity 0.2s ease; }
+.view-switch-enter-active, .view-switch-leave-active { transition: opacity 0.25s ease; }
 .view-switch-enter-from, .view-switch-leave-to { opacity: 0; }
 </style>

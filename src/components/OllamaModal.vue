@@ -6,15 +6,13 @@ const props = defineProps({
 })
 const emit = defineEmits(['update:modelValue', 'import'])
 
-// ── state ──────────────────────────────────────────────────────────────────
 const modelInput = ref('')
 const pulling = ref(false)
 const pullError = ref('')
-const layers = ref([]) // [{ id, status, completed, total }]
+const layers = ref([])
 const overallStatus = ref('')
 const done = ref(false)
 
-// ── computed ───────────────────────────────────────────────────────────────
 const totalCompleted = computed(() => layers.value.reduce((s, l) => s + (l.completed ?? 0), 0))
 const totalSize = computed(() => layers.value.reduce((s, l) => s + (l.total ?? 0), 0))
 const overallPct = computed(() =>
@@ -29,10 +27,9 @@ function fmt(bytes) {
 }
 
 function layerLabel(id) {
-  return id?.slice(7, 19) ?? '...' // sha256:xxxx → short id
+  return id?.slice(7, 19) ?? '...'
 }
 
-// ── pull logic ─────────────────────────────────────────────────────────────
 async function pull() {
   const name = modelInput.value.trim()
   if (!name || pulling.value) return
@@ -65,7 +62,7 @@ async function pull() {
 
       buffer += decoder.decode(value, { stream: true })
       const lines = buffer.split('\n')
-      buffer = lines.pop() // keep incomplete line
+      buffer = lines.pop()
 
       for (const line of lines) {
         if (!line.trim()) continue
@@ -112,7 +109,7 @@ function handleChunk(obj) {
 }
 
 function close() {
-  if (pulling.value) return // don't close mid-pull
+  if (pulling.value) return
   modelInput.value = ''
   pulling.value = false
   pullError.value = ''
@@ -135,7 +132,6 @@ function reset() {
   <Transition name="modal-fade">
     <div v-if="modelValue" class="modal-overlay" @click.self="close">
       <div class="modal">
-        <!-- Header -->
         <div class="modal-header">
           <h3 class="modal-title">Pull Ollama Model</h3>
           <button v-if="!pulling" class="modal-close" @click="close" aria-label="Close">
@@ -154,7 +150,6 @@ function reset() {
           </button>
         </div>
 
-        <!-- Input row -->
         <div v-if="!pulling && !done" class="input-row">
           <input
             v-model="modelInput"
@@ -181,7 +176,6 @@ function reset() {
           </button>
         </div>
 
-        <!-- Library link -->
         <p v-if="!pulling && !done" class="modal-sub">
           Browse models at
           <a href="https://ollama.com/library" target="_blank" class="modal-link"
@@ -189,7 +183,6 @@ function reset() {
           >
         </p>
 
-        <!-- Error -->
         <div v-if="pullError" class="pull-error">
           <svg
             xmlns="http://www.w3.org/2000/svg"
@@ -207,12 +200,8 @@ function reset() {
           {{ pullError }}
         </div>
 
-        <!-- Progress UI -->
         <div v-if="pulling || (done && layers.length)" class="progress-wrap">
-          <!-- Model name pill -->
           <div class="progress-model-name">{{ modelInput.trim() }}</div>
-
-          <!-- Overall bar -->
           <div class="overall-row">
             <div class="overall-bar-track">
               <div
@@ -223,14 +212,10 @@ function reset() {
             </div>
             <span class="overall-pct">{{ done ? '100' : overallPct }}%</span>
           </div>
-
-          <!-- Status text -->
           <p class="status-text" :class="{ done }">
             <span v-if="done">✓ Model ready</span>
             <span v-else>{{ overallStatus }}</span>
           </p>
-
-          <!-- Layer breakdown -->
           <div v-if="layers.length && !done" class="layers">
             <div v-for="layer in layers" :key="layer.id" class="layer-row">
               <span class="layer-id">{{ layerLabel(layer.id) }}</span>
@@ -251,7 +236,6 @@ function reset() {
           </div>
         </div>
 
-        <!-- Actions -->
         <div class="modal-actions">
           <template v-if="done">
             <button class="btn-secondary" @click="reset">Pull another</button>
@@ -273,7 +257,7 @@ function reset() {
 .modal-overlay {
   position: fixed;
   inset: 0;
-  background: rgba(0, 0, 0, 0.65);
+  background: rgba(0, 0, 0, 0.45);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -282,21 +266,21 @@ function reset() {
 }
 
 .modal {
-  background: #1a0505;
-  border: 1px solid #5a2020;
+  background: var(--modal-bg);
+  border: 1px solid var(--modal-border);
   border-radius: 10px;
   padding: 24px;
   width: 420px;
   max-width: calc(100vw - 32px);
-  box-shadow:
-    0 8px 48px rgba(0, 0, 0, 0.6),
-    0 0 30px rgba(100, 20, 20, 0.2);
+  box-shadow: 0 8px 48px rgba(0, 0, 0, 0.25);
   display: flex;
   flex-direction: column;
   gap: 14px;
+  transition:
+    background 0.25s ease,
+    border-color 0.25s ease;
 }
 
-/* Header */
 .modal-header {
   display: flex;
   align-items: center;
@@ -311,6 +295,7 @@ function reset() {
   text-transform: uppercase;
   color: var(--beige);
   margin: 0;
+  transition: color 0.25s ease;
 }
 
 .modal-close {
@@ -320,13 +305,13 @@ function reset() {
   align-items: center;
   justify-content: center;
   background: transparent;
-  border: 1px solid #3a1a1a;
+  border: 1px solid var(--model-selector-border);
   border-radius: 5px;
-  color: #7a4030;
+  color: var(--icon-btn-color);
   cursor: pointer;
   transition:
-    color 0.15s,
-    border-color 0.15s;
+    color 0.25s ease,
+    border-color 0.25s ease;
   padding: 0;
 }
 .modal-close svg {
@@ -335,10 +320,9 @@ function reset() {
 }
 .modal-close:hover {
   color: var(--beige);
-  border-color: #6a2a2a;
+  border-color: var(--orange);
 }
 
-/* Input row */
 .input-row {
   display: flex;
   gap: 8px;
@@ -346,21 +330,24 @@ function reset() {
 
 .modal-input {
   flex: 1;
-  background: #0e0000;
-  border: 1px solid #5a2a1a;
+  background: var(--modal-input-bg);
+  border: 1px solid var(--modal-input-border);
   border-radius: 6px;
   padding: 9px 12px;
   color: var(--beige);
   font-family: var(--font-mono), monospace;
   font-size: 13px;
   outline: none;
-  transition: border-color 0.15s;
+  transition:
+    border-color 0.25s ease,
+    background 0.25s ease,
+    color 0.25s ease;
 }
 .modal-input:focus {
   border-color: var(--orange);
 }
 .modal-input::placeholder {
-  color: #6b3a2a;
+  color: var(--status-muted-color);
 }
 
 .pull-btn {
@@ -371,7 +358,7 @@ function reset() {
   background: var(--formula-red);
   border: 1px solid var(--dark-red);
   border-radius: 6px;
-  color: var(--beige);
+  color: #fbf5d7;
   font-family: var(--font-sans), sans-serif;
   font-size: 12px;
   font-weight: 700;
@@ -379,8 +366,8 @@ function reset() {
   text-transform: uppercase;
   cursor: pointer;
   transition:
-    background 0.15s,
-    box-shadow 0.15s;
+    background 0.25s ease,
+    box-shadow 0.25s ease;
   white-space: nowrap;
   flex-shrink: 0;
 }
@@ -390,42 +377,40 @@ function reset() {
 }
 .pull-btn:hover:not(:disabled) {
   background: var(--dark-red);
-  box-shadow: 0 0 16px rgba(135, 4, 0, 0.5);
+  box-shadow: 0 0 16px rgba(135, 4, 0, 0.4);
 }
 .pull-btn:disabled {
   opacity: 0.4;
   cursor: default;
 }
 
-/* Sub text */
 .modal-sub {
   font-family: var(--font-mono), monospace;
   font-size: 11px;
-  color: #7a4030;
+  color: var(--status-muted-color);
   margin: -4px 0 0;
 }
 .modal-link {
   color: var(--orange);
   text-decoration: none;
   border-bottom: 1px solid rgba(240, 118, 12, 0.3);
-  transition: border-color 0.15s;
+  transition: border-color 0.25s ease;
 }
 .modal-link:hover {
   border-color: var(--orange);
 }
 
-/* Error */
 .pull-error {
   display: flex;
   align-items: flex-start;
   gap: 8px;
   padding: 10px 12px;
-  background: rgba(180, 30, 10, 0.12);
-  border: 1px solid #6a2010;
+  background: rgba(180, 30, 10, 0.08);
+  border: 1px solid var(--model-selector-border);
   border-radius: 6px;
   font-family: var(--font-mono), monospace;
   font-size: 12px;
-  color: #e07060;
+  color: var(--status-error-color);
   line-height: 1.5;
 }
 .pull-error svg {
@@ -435,7 +420,6 @@ function reset() {
   margin-top: 1px;
 }
 
-/* Progress */
 .progress-wrap {
   display: flex;
   flex-direction: column;
@@ -458,7 +442,7 @@ function reset() {
 .overall-bar-track {
   flex: 1;
   height: 6px;
-  background: #2a0808;
+  background: var(--model-selector-bg);
   border-radius: 3px;
   overflow: hidden;
 }
@@ -469,7 +453,6 @@ function reset() {
   border-radius: 3px;
   transition: width 0.3s ease;
 }
-
 .overall-bar-fill.done {
   background: linear-gradient(90deg, #2a7a30, #4aaa50);
 }
@@ -477,7 +460,7 @@ function reset() {
 .overall-pct {
   font-family: var(--font-mono), monospace;
   font-size: 11px;
-  color: #c9856a;
+  color: var(--sidebar-tab-color);
   width: 34px;
   text-align: right;
   flex-shrink: 0;
@@ -486,14 +469,13 @@ function reset() {
 .status-text {
   font-family: var(--font-mono), monospace;
   font-size: 11px;
-  color: #7a4030;
+  color: var(--status-muted-color);
   margin: 0;
 }
 .status-text.done {
   color: #4aaa50;
 }
 
-/* Layers */
 .layers {
   display: flex;
   flex-direction: column;
@@ -501,14 +483,14 @@ function reset() {
   max-height: 160px;
   overflow-y: auto;
   scrollbar-width: thin;
-  scrollbar-color: #2a0808 transparent;
+  scrollbar-color: var(--model-selector-border) transparent;
   padding-right: 2px;
 }
 .layers::-webkit-scrollbar {
   width: 3px;
 }
 .layers::-webkit-scrollbar-thumb {
-  background: #2a0808;
+  background: var(--model-selector-border);
   border-radius: 2px;
 }
 
@@ -521,7 +503,7 @@ function reset() {
 .layer-id {
   font-family: var(--font-mono), monospace;
   font-size: 10px;
-  color: #5a2a20;
+  color: var(--status-muted-color);
   width: 78px;
   flex-shrink: 0;
   overflow: hidden;
@@ -532,14 +514,14 @@ function reset() {
 .layer-bar-track {
   flex: 1;
   height: 3px;
-  background: #2a0808;
+  background: var(--model-selector-bg);
   border-radius: 2px;
   overflow: hidden;
 }
 
 .layer-bar-fill {
   height: 100%;
-  background: #7a2a20;
+  background: var(--dark-red);
   border-radius: 2px;
   transition: width 0.2s ease;
 }
@@ -547,7 +529,7 @@ function reset() {
 .layer-size {
   font-family: var(--font-mono), monospace;
   font-size: 10px;
-  color: #5a3025;
+  color: var(--status-muted-color);
   width: 100px;
   flex-shrink: 0;
   text-align: right;
@@ -556,7 +538,6 @@ function reset() {
   text-overflow: ellipsis;
 }
 
-/* Actions */
 .modal-actions {
   display: flex;
   justify-content: flex-end;
@@ -570,7 +551,7 @@ function reset() {
   background: var(--formula-red);
   border: 1px solid var(--dark-red);
   border-radius: 5px;
-  color: var(--beige);
+  color: #fbf5d7;
   font-family: var(--font-sans), sans-serif;
   font-size: 12px;
   font-weight: 700;
@@ -578,20 +559,20 @@ function reset() {
   text-transform: uppercase;
   cursor: pointer;
   transition:
-    background 0.15s,
-    box-shadow 0.15s;
+    background 0.25s ease,
+    box-shadow 0.25s ease;
 }
 .btn-primary:hover {
   background: var(--dark-red);
-  box-shadow: 0 0 14px rgba(135, 4, 0, 0.4);
+  box-shadow: 0 0 14px rgba(135, 4, 0, 0.3);
 }
 
 .btn-secondary {
   padding: 7px 16px;
   background: transparent;
-  border: 1px solid #4a2020;
+  border: 1px solid var(--model-selector-border);
   border-radius: 5px;
-  color: #a06050;
+  color: var(--sidebar-tab-color);
   font-family: var(--font-sans), sans-serif;
   font-size: 12px;
   font-weight: 600;
@@ -599,22 +580,21 @@ function reset() {
   text-transform: uppercase;
   cursor: pointer;
   transition:
-    border-color 0.15s,
-    color 0.15s;
+    border-color 0.25s ease,
+    color 0.25s ease;
 }
 .btn-secondary:hover {
-  border-color: var(--formula-red);
+  border-color: var(--orange);
   color: var(--beige);
 }
 
 .pulling-note {
   font-family: var(--font-mono), monospace;
   font-size: 11px;
-  color: #5a3025;
+  color: var(--status-muted-color);
   font-style: italic;
 }
 
-/* Transition */
 .modal-fade-enter-active,
 .modal-fade-leave-active {
   transition: opacity 0.2s ease;

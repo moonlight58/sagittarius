@@ -11,10 +11,9 @@ const { ollamaHost, setHost, resetHost } = useSettings()
 
 const inputVal = ref(ollamaHost.value)
 const testing = ref(false)
-const testResult = ref(null) // null | 'ok' | 'error'
+const testResult = ref(null)
 const testError = ref('')
 
-// Sync input when modal opens
 watch(() => props.modelValue, (open) => {
   if (open) {
     inputVal.value = ollamaHost.value
@@ -70,7 +69,6 @@ function close() {
     <div v-if="modelValue" class="modal-overlay" @click.self="close">
       <div class="modal">
 
-        <!-- Header -->
         <div class="modal-header">
           <div class="modal-title-row">
             <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" class="title-icon">
@@ -87,12 +85,10 @@ function close() {
           </button>
         </div>
 
-        <!-- Description -->
         <p class="modal-desc">
           Point Sagittarius at your Ollama instance. This can be a local address, a VPN IP, or a public URL if your Ollama is exposed remotely.
         </p>
 
-        <!-- Input -->
         <div class="field">
           <label class="field-label">Ollama Host URL</label>
           <div class="input-row">
@@ -110,7 +106,6 @@ function close() {
           </div>
         </div>
 
-        <!-- Test result -->
         <Transition name="result-fade">
           <div v-if="testResult" class="test-result" :class="testResult">
             <svg v-if="testResult === 'ok'" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
@@ -123,7 +118,6 @@ function close() {
           </div>
         </Transition>
 
-        <!-- Examples -->
         <div class="examples">
           <span class="examples-label">Examples</span>
           <div class="example-pills">
@@ -133,7 +127,6 @@ function close() {
           </div>
         </div>
 
-        <!-- Actions -->
         <div class="modal-actions">
           <button class="btn-ghost" @click="reset" title="Reset to default">
             <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
@@ -157,7 +150,7 @@ function close() {
 .modal-overlay {
   position: fixed;
   inset: 0;
-  background: rgba(0,0,0,0.65);
+  background: rgba(0, 0, 0, 0.45);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -166,19 +159,19 @@ function close() {
 }
 
 .modal {
-  background: #1a0505;
-  border: 1px solid #5a2020;
+  background: var(--modal-bg);
+  border: 1px solid var(--modal-border);
   border-radius: 10px;
   padding: 24px;
   width: 440px;
   max-width: calc(100vw - 32px);
-  box-shadow: 0 8px 48px rgba(0,0,0,0.6), 0 0 30px rgba(100,20,20,0.2);
+  box-shadow: 0 8px 48px rgba(0, 0, 0, 0.2);
   display: flex;
   flex-direction: column;
   gap: 16px;
+  transition: background 0.25s ease, border-color 0.25s ease;
 }
 
-/* Header */
 .modal-header {
   display: flex;
   align-items: center;
@@ -206,6 +199,7 @@ function close() {
   text-transform: uppercase;
   color: var(--beige);
   margin: 0;
+  transition: color 0.25s ease;
 }
 
 .modal-close {
@@ -215,64 +209,57 @@ function close() {
   align-items: center;
   justify-content: center;
   background: transparent;
-  border: 1px solid #3a1a1a;
+  border: 1px solid var(--model-selector-border);
   border-radius: 5px;
-  color: #7a4030;
+  color: var(--icon-btn-color);
   cursor: pointer;
   transition: color 0.15s, border-color 0.15s;
   padding: 0;
 }
 .modal-close svg { width: 13px; height: 13px; }
-.modal-close:hover { color: var(--beige); border-color: #6a2a2a; }
+.modal-close:hover { color: var(--beige); border-color: var(--orange); }
 
-/* Description */
 .modal-desc {
   font-family: var(--font-sans), sans-serif;
   font-size: 12.5px;
   line-height: 1.65;
-  color: #7a5040;
+  color: var(--sidebar-tab-color);
   margin: 0;
+  transition: color 0.25s ease;
 }
 
-/* Field */
-.field {
-  display: flex;
-  flex-direction: column;
-  gap: 7px;
-}
+.field { display: flex; flex-direction: column; gap: 7px; }
 
 .field-label {
   font-family: var(--font-mono), monospace;
   font-size: 10px;
   letter-spacing: 0.14em;
   text-transform: uppercase;
-  color: #6a3a28;
+  color: var(--status-muted-color);
+  transition: color 0.25s ease;
 }
 
-.input-row {
-  display: flex;
-  gap: 8px;
-}
+.input-row { display: flex; gap: 8px; }
 
 .modal-input {
   flex: 1;
-  background: #0e0000;
-  border: 1px solid #5a2a1a;
+  background: var(--modal-input-bg);
+  border: 1px solid var(--modal-input-border);
   border-radius: 6px;
   padding: 9px 12px;
   color: var(--beige);
   font-family: var(--font-mono), monospace;
   font-size: 13px;
   outline: none;
-  transition: border-color 0.15s;
+  transition: border-color 0.15s, background 0.25s ease, color 0.25s ease;
 }
 .modal-input:focus { border-color: var(--orange); }
-.modal-input::placeholder { color: #5a3020; }
+.modal-input::placeholder { color: var(--status-muted-color); }
 
 .test-btn {
   padding: 9px 16px;
-  background: rgba(135, 4, 0, 0.2);
-  border: 1px solid #5a2010;
+  background: var(--model-selector-bg);
+  border: 1px solid var(--model-selector-border);
   border-radius: 6px;
   color: var(--beige);
   font-family: var(--font-sans), sans-serif;
@@ -281,7 +268,7 @@ function close() {
   letter-spacing: 0.06em;
   text-transform: uppercase;
   cursor: pointer;
-  transition: background 0.15s, border-color 0.15s;
+  transition: background 0.15s, border-color 0.15s, color 0.25s ease;
   white-space: nowrap;
   flex-shrink: 0;
   display: flex;
@@ -291,23 +278,20 @@ function close() {
   justify-content: center;
 }
 .test-btn:hover:not(:disabled) {
-  background: rgba(135, 4, 0, 0.35);
   border-color: var(--orange);
 }
 .test-btn:disabled { opacity: 0.4; cursor: default; }
 
-/* Spinner */
 .spinner {
   width: 11px;
   height: 11px;
-  border: 1.5px solid #3a1a10;
+  border: 1.5px solid var(--model-selector-border);
   border-top-color: var(--orange);
   border-radius: 50%;
   animation: spin 0.7s linear infinite;
 }
 @keyframes spin { to { transform: rotate(360deg); } }
 
-/* Test result */
 .test-result {
   display: flex;
   align-items: center;
@@ -319,48 +303,38 @@ function close() {
   line-height: 1.4;
 }
 .test-result svg { width: 14px; height: 14px; flex-shrink: 0; }
-.test-result.ok    { background: rgba(40, 120, 50, 0.12); border: 1px solid #2a5a30; color: #4aaa55; }
-.test-result.error { background: rgba(180, 30, 10, 0.12); border: 1px solid #6a2010; color: #e07060; }
+.test-result.ok    { background: rgba(40, 120, 50, 0.1); border: 1px solid #2a5a30; color: #4aaa55; }
+.test-result.error { background: rgba(180, 30, 10, 0.08); border: 1px solid var(--model-selector-border); color: var(--status-error-color); }
 
-/* Examples */
-.examples {
-  display: flex;
-  flex-direction: column;
-  gap: 7px;
-}
+.examples { display: flex; flex-direction: column; gap: 7px; }
 
 .examples-label {
   font-family: var(--font-mono), monospace;
   font-size: 10px;
   letter-spacing: 0.14em;
   text-transform: uppercase;
-  color: #5a3020;
+  color: var(--status-muted-color);
 }
 
-.example-pills {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 6px;
-}
+.example-pills { display: flex; flex-wrap: wrap; gap: 6px; }
 
 .example-pill {
   padding: 4px 10px;
   background: transparent;
-  border: 1px solid #2a1010;
+  border: 1px solid var(--model-selector-border);
   border-radius: 20px;
-  color: #7a4030;
+  color: var(--sidebar-tab-color);
   font-family: var(--font-mono), monospace;
   font-size: 11px;
   cursor: pointer;
   transition: border-color 0.15s, color 0.15s, background 0.15s;
 }
 .example-pill:hover {
-  border-color: #6a2a1a;
+  border-color: var(--orange);
   color: var(--beige);
-  background: rgba(135, 4, 0, 0.1);
+  background: var(--model-selector-bg);
 }
 
-/* Actions */
 .modal-actions {
   display: flex;
   align-items: center;
@@ -368,13 +342,11 @@ function close() {
   gap: 10px;
   margin-top: 2px;
   padding-top: 14px;
-  border-top: 1px solid #1e0808;
+  border-top: 1px solid var(--topbar-border);
+  transition: border-color 0.25s ease;
 }
 
-.actions-right {
-  display: flex;
-  gap: 8px;
-}
+.actions-right { display: flex; gap: 8px; }
 
 .btn-ghost {
   display: flex;
@@ -383,7 +355,7 @@ function close() {
   padding: 7px 12px;
   background: transparent;
   border: none;
-  color: #5a3020;
+  color: var(--status-muted-color);
   font-family: var(--font-mono), monospace;
   font-size: 11px;
   letter-spacing: 0.06em;
@@ -393,14 +365,14 @@ function close() {
   border-radius: 5px;
 }
 .btn-ghost svg { width: 12px; height: 12px; }
-.btn-ghost:hover { color: #c9856a; }
+.btn-ghost:hover { color: var(--orange); }
 
 .btn-primary {
   padding: 7px 18px;
   background: var(--formula-red);
   border: 1px solid var(--dark-red);
   border-radius: 5px;
-  color: var(--beige);
+  color: #fbf5d7;
   font-family: var(--font-sans), sans-serif;
   font-size: 12px;
   font-weight: 700;
@@ -411,16 +383,16 @@ function close() {
 }
 .btn-primary:hover:not(:disabled) {
   background: var(--dark-red);
-  box-shadow: 0 0 14px rgba(135, 4, 0, 0.4);
+  box-shadow: 0 0 14px rgba(135, 4, 0, 0.3);
 }
 .btn-primary:disabled { opacity: 0.4; cursor: default; }
 
 .btn-secondary {
   padding: 7px 16px;
   background: transparent;
-  border: 1px solid #4a2020;
+  border: 1px solid var(--model-selector-border);
   border-radius: 5px;
-  color: #a06050;
+  color: var(--sidebar-tab-color);
   font-family: var(--font-sans), sans-serif;
   font-size: 12px;
   font-weight: 600;
@@ -429,9 +401,8 @@ function close() {
   cursor: pointer;
   transition: border-color 0.15s, color 0.15s;
 }
-.btn-secondary:hover { border-color: var(--formula-red); color: var(--beige); }
+.btn-secondary:hover { border-color: var(--orange); color: var(--beige); }
 
-/* Transitions */
 .modal-fade-enter-active, .modal-fade-leave-active { transition: opacity 0.2s ease; }
 .modal-fade-enter-from, .modal-fade-leave-to { opacity: 0; }
 

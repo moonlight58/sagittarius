@@ -1,29 +1,10 @@
+@import url('https://fonts.googleapis.com/css2?family=PT+Sans:ital,wght@0,400;0,700;1,400;1,700&display=swap');
+
 @font-face {
   font-family: 'Argesta';
   src: url('./fonts/ArgestaNerdFont-DisplayRegular.otf') format('opentype');
   font-weight: normal;
   font-style: normal;
-}
-
-@font-face {
-  font-family: 'Caskaydia';
-  src: url('./fonts/CaskaydiaCoveNerdFont-Regular.ttf') format('truetype');
-  font-weight: normal;
-  font-style: normal;
-}
-
-@font-face {
-  font-family: 'Caskaydia';
-  src: url('./fonts/CaskaydiaCoveNerdFont-Bold.ttf') format('truetype');
-  font-weight: bold;
-  font-style: normal;
-}
-
-@font-face {
-  font-family: 'Caskaydia';
-  src: url('./fonts/CaskaydiaCoveNerdFont-Italic.ttf') format('truetype');
-  font-weight: normal;
-  font-style: italic;
 }
 
 @font-face {
@@ -33,18 +14,186 @@
   font-style: normal;
 }
 
+/* ── Static palette ─────────────────────────────────────────────────────── */
 :root {
-  --font-mono: 'Silka', monospace;
-  --font-serif: 'Argesta', serif;
-  --font-sans: 'Caskaydia', sans-serif;
-  --beige: #fbf5d7;
+  --font-mono: 'Silka';
+  --font-serif: 'Argesta';
+  --font-sans: 'PT Sans';
+
+  /* Brand constants (never change between themes) */
   --orange: #f0760c;
   --dark-red: #870400;
   --formula-red: #500001;
-  --smoky-black: #1b0000;
-  --color-bg: #0e0000;
 }
 
+/* ── Dark theme (default) ───────────────────────────────────────────────── */
+:root,
+[data-theme='dark'] {
+  --beige: #fbf5d7;
+  --smoky-black: #1b0000;
+  --color-bg: #0e0000;
+
+  --sidebar-bg: #110000;
+  --sidebar-border: #3d1010;
+  --sidebar-logo-border: #2e1010;
+  --sidebar-divider: #6b2a2a;
+  --sidebar-tab-color: #9a5040;
+  --sidebar-tab-active-bg: rgba(135, 4, 0, 0.25);
+  --sidebar-tab-hover-bg: rgba(135, 4, 0, 0.15);
+  --sidebar-new-chat-border: #3a1a1a;
+  --sidebar-new-chat-color: #7a4030;
+  --sidebar-collapse-bg: #1f0000;
+  --sidebar-collapse-border: #4a1a1a;
+
+  --topbar-border: #2a0e0e;
+
+  --chat-header-border: #2a0e0e;
+  --chat-messages-bg: transparent;
+  --chat-input-border: #1e0808;
+
+  --user-bubble-bg: #2a0808;
+  --user-bubble-border: #4a1a1a;
+  --user-bubble-color: var(--beige);
+
+  --assistant-bubble-bg: #160404;
+  --assistant-bubble-border: #2e1010;
+  --assistant-bubble-color: #e0c8b0;
+
+  --markdown-color: #e0c8b0;
+  --markdown-h-color: var(--beige);
+  --markdown-code-bg: #2a0a0a;
+  --markdown-code-border: #3a1a1a;
+  --markdown-code-color: #f0a070;
+  --markdown-pre-bg: #0e0000;
+  --markdown-pre-border: #2e1010;
+  --markdown-pre-color: #d4b896;
+  --markdown-blockquote-border: #4a1a1a;
+  --markdown-blockquote-color: #9a7060;
+  --markdown-hr-color: #2a1010;
+  --markdown-link-color: var(--orange);
+  --markdown-em-color: #c9a88a;
+
+  --promptbar-bg: #2a1515;
+  --promptbar-border: #6a4a3a;
+  --promptbar-focus-border: #a75c3a;
+  --promptbar-input-color: #e8dcc8;
+  --promptbar-placeholder: #8a6a5a;
+  --promptbar-send-bg: #3a2520;
+  --promptbar-send-border: #5a4030;
+  --promptbar-send-color: #8a7060;
+  --promptbar-hint-color: #6a5a4a;
+
+  --history-item-color: #7a4535;
+  --history-item-hover-bg: rgba(135, 4, 0, 0.1);
+  --history-item-active-bg: rgba(135, 4, 0, 0.18);
+  --history-title-color: inherit;
+  --history-delete-color: #5a2020;
+
+  --modal-bg: #1a0505;
+  --modal-border: #5a2020;
+  --modal-input-bg: #0e0000;
+  --modal-input-border: #5a2a1a;
+
+  --status-loading-color: #9a6040;
+  --status-error-color: #e07060;
+  --status-muted-color: #5a3020;
+  --status-muted-border: #2a1010;
+
+  --model-selector-bg: rgba(135, 4, 0, 0.1);
+  --model-selector-border: #4a1a1a;
+  --model-dot-inactive: #4a2020;
+  --model-dropdown-bg: #1a0505;
+
+  --icon-btn-border: #2a1010;
+  --icon-btn-color: #5a3020;
+
+  --placeholder-color: #2e0000;
+}
+
+/* ── Light theme ────────────────────────────────────────────────────────── */
+[data-theme='light'] {
+  --beige: #2a1008;
+  --smoky-black: #f5ede0;
+  --color-bg: #f7f0e4;
+
+  --sidebar-bg: #ede5d4;
+  --sidebar-border: #c9b89a;
+  --sidebar-logo-border: #d4c4a8;
+  --sidebar-divider: #b8a080;
+  --sidebar-tab-color: #8a6040;
+  --sidebar-tab-active-bg: rgba(240, 118, 12, 0.12);
+  --sidebar-tab-hover-bg: rgba(240, 118, 12, 0.07);
+  --sidebar-new-chat-border: #c4ad8a;
+  --sidebar-new-chat-color: #9a7050;
+  --sidebar-collapse-bg: #e5dac8;
+  --sidebar-collapse-border: #c4a880;
+
+  --topbar-border: #d4c4a8;
+
+  --chat-header-border: #d4c4a8;
+  --chat-messages-bg: transparent;
+  --chat-input-border: #d4c4a8;
+
+  --user-bubble-bg: #e8dcc8;
+  --user-bubble-border: #c8b090;
+  --user-bubble-color: #2a1008;
+
+  --assistant-bubble-bg: #f0e8d8;
+  --assistant-bubble-border: #d8c8b0;
+  --assistant-bubble-color: #3a2010;
+
+  --markdown-color: #3a2010;
+  --markdown-h-color: #1a0a00;
+  --markdown-code-bg: #e8dcc8;
+  --markdown-code-border: #c8b090;
+  --markdown-code-color: #b04010;
+  --markdown-pre-bg: #e0cea7;
+  --markdown-pre-border: #c8b090;
+  --markdown-pre-color: #4a2a10;
+  --markdown-blockquote-border: #c8a870;
+  --markdown-blockquote-color: #8a6040;
+  --markdown-hr-color: #d4c0a0;
+  --markdown-link-color: var(--orange);
+  --markdown-em-color: #7a4820;
+
+  --promptbar-bg: #e8dcc8;
+  --promptbar-border: #c0a070;
+  --promptbar-focus-border: var(--orange);
+  --promptbar-input-color: #2a1008;
+  --promptbar-placeholder: #9a7850;
+  --promptbar-send-bg: #ddd0b8;
+  --promptbar-send-border: #c0a878;
+  --promptbar-send-color: #9a7850;
+  --promptbar-hint-color: #a89070;
+
+  --history-item-color: #8a6040;
+  --history-item-hover-bg: rgba(240, 118, 12, 0.07);
+  --history-item-active-bg: rgba(240, 118, 12, 0.12);
+  --history-title-color: inherit;
+  --history-delete-color: #b08060;
+
+  --modal-bg: #f0e8d8;
+  --modal-border: #c0a070;
+  --modal-input-bg: #faf5ec;
+  --modal-input-border: #c0a070;
+
+  --status-loading-color: #8a6040;
+  --status-error-color: #c04020;
+  --status-muted-color: #9a7850;
+  --status-muted-border: #c4ad8a;
+
+  --model-selector-bg: rgba(240, 118, 12, 0.08);
+  --model-selector-border: #c0a878;
+  --model-dot-inactive: #c0a070;
+  --model-dropdown-bg: #f0e8d8;
+
+  --icon-btn-border: #c4ad8a;
+  --icon-btn-color: #9a7850;
+
+  --placeholder-color: #c8b898;
+}
+
+/* ── Reset & base ───────────────────────────────────────────────────────── */
 *,
 *::before,
 *::after {
@@ -58,6 +207,9 @@ body {
   height: 100%;
   background: var(--color-bg);
   color: var(--beige);
+  transition:
+    background 0.25s ease,
+    color 0.25s ease;
 }
 
 #app {
@@ -84,6 +236,6 @@ body {
   justify-content: center;
   font-family: var(--font-mono), monospace;
   font-size: 13px;
-  color: #2e0000;
+  color: var(--placeholder-color);
   letter-spacing: 0.05em;
 }

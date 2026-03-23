@@ -159,8 +159,8 @@ const features = [
   opacity: 0;
   transform: translateY(10px);
   transition:
-    opacity 0.5s ease,
-    transform 0.5s ease;
+    opacity 0.25s ease,
+    transform 0.25s ease;
 }
 
 .home.visible {
@@ -344,7 +344,7 @@ const features = [
 
 .feature-card {
   position: relative;
-  background: #110000;
+  background: var(--card-bg);
   border: 1px solid #2e1010;
   border-radius: 10px;
   padding: 24px;
@@ -354,9 +354,9 @@ const features = [
   gap: 16px;
   overflow: hidden;
   transition:
-    border-color 0.2s ease,
-    transform 0.2s ease,
-    box-shadow 0.2s ease;
+    border-color 0.25s ease,
+    transform 0.25s ease,
+    box-shadow 0.25s ease;
   animation: card-in 0.4s ease both;
   animation-delay: var(--delay);
 }
@@ -428,7 +428,7 @@ const features = [
     transparent 60%
   );
   opacity: 0;
-  transition: opacity 0.3s ease;
+  transition: opacity 0.25s ease;
   pointer-events: none;
 }
 
@@ -455,8 +455,8 @@ const features = [
   color: var(--accent);
   flex-shrink: 0;
   transition:
-    background 0.2s,
-    border-color 0.2s;
+    background 0.25s,
+    border-color 0.25s;
 }
 
 .feature-card:not(.soon):hover .card-icon-wrap {
@@ -524,13 +524,13 @@ const features = [
   text-transform: uppercase;
   color: #6a3a28;
   transition:
-    color 0.2s,
-    gap 0.2s;
+    color 0.25s,
+    gap 0.25s;
 }
 .card-cta svg {
   width: 12px;
   height: 12px;
-  transition: transform 0.2s;
+  transition: transform 0.25s;
 }
 .feature-card:not(.soon):hover .card-cta svg {
   transform: translateX(3px);
