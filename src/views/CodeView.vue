@@ -5,7 +5,13 @@ import PromptBar from '../components/PromptBar.vue'
 import ChatView from '../components/ChatView.vue'
 import { useChat } from '../composables/useChat.js'
 
-const { activeChat, activeModel, submitPrompt } = useChat('code')
+const {
+  activeChat,
+  activeModel,
+  submitPrompt,
+  stopGeneration,
+  regenerateLastMessage,
+} = useChat('code')
 
 const hasActiveChat = computed(() => !!activeChat.value)
 const canSubmit = computed(() => !!activeModel.value)
@@ -31,7 +37,14 @@ const canSubmit = computed(() => !!activeModel.value)
           @submit="submitPrompt"
         />
       </div>
-      <ChatView v-else key="chat" :chat="activeChat" @submit="submitPrompt" />
+      <ChatView
+        v-else
+        key="chat"
+        :chat="activeChat"
+        @submit="submitPrompt"
+        @stop="stopGeneration"
+        @regenerate="regenerateLastMessage"
+      />
     </Transition>
   </div>
 </template>

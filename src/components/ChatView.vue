@@ -8,11 +8,11 @@ const props = defineProps({
   chat: { type: Object, required: true },
 })
 
-const emit = defineEmits(['submit'])
+const emit = defineEmits(['submit', 'stop', 'regenerate'])
 
 const messagesRef = ref(null)
 
-// Configure marked with highlight.js
+// ── Markdown setup ─────────────────────────────────────────────────────────
 marked.setOptions({
   highlight(code, lang) {
     if (lang && hljs.getLanguage(lang)) {
@@ -29,13 +29,38 @@ function renderMarkdown(content) {
   return marked.parse(content)
 }
 
-// Auto-scroll on new content
+// ── Copy buttons on code blocks ────────────────────────────────────────────
+function attachCopyButtons(container) {
+  if (!container) return
+  container.querySelectorAll('pre').forEach((pre) => {
+    if (pre.querySelector('.copy-btn')) return
+    const btn = document.createElement('button')
+    btn.className = 'copy-btn'
+    btn.title = 'Copy code'
+    btn.innerHTML = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>`
+    btn.addEventListener('click', async () => {
+      const code = pre.querySelector('code')?.innerText ?? ''
+      await navigator.clipboard.writeText(code)
+      btn.classList.add('copied')
+      btn.innerHTML = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>`
+      setTimeout(() => {
+        btn.classList.remove('copied')
+        btn.innerHTML = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>`
+      }, 1800)
+    })
+    pre.appendChild(btn)
+  })
+}
+
+// ── Scroll + copy button wiring ────────────────────────────────────────────
 watch(
   () => props.chat?.messages?.length,
-  () => scrollToBottom(),
+  () => {
+    scrollToBottom()
+    nextTick(() => attachCopyButtons(messagesRef.value))
+  },
 )
 
-// Also scroll while streaming (content changes but length stays same)
 watch(
   () => {
     const msgs = props.chat?.messages
@@ -43,7 +68,10 @@ watch(
     const last = msgs[msgs.length - 1]
     return last?.streaming ? last.content : ''
   },
-  () => scrollToBottom(),
+  () => {
+    scrollToBottom()
+    nextTick(() => attachCopyButtons(messagesRef.value))
+  },
 )
 
 async function scrollToBottom() {
@@ -53,14 +81,24 @@ async function scrollToBottom() {
   }
 }
 
+// ── Computed ───────────────────────────────────────────────────────────────
+const isStreaming = computed(() => {
+  const msgs = props.chat?.messages
+  return !!(msgs?.length && msgs[msgs.length - 1]?.streaming)
+})
+
+// Index of the last assistant message — used to show the re-roll button
+const lastAssistantIdx = computed(() => {
+  const msgs = props.chat?.messages ?? []
+  for (let i = msgs.length - 1; i >= 0; i--) {
+    if (msgs[i].role === 'assistant') return i
+  }
+  return -1
+})
+
 function formatTime(ts) {
   return new Date(ts).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
 }
-
-const isStreaming = computed(() => {
-  const msgs = props.chat?.messages
-  return msgs?.length && msgs[msgs.length - 1]?.streaming
-})
 </script>
 
 <template>
@@ -81,12 +119,12 @@ const isStreaming = computed(() => {
     <div ref="messagesRef" class="chat-messages">
       <div v-for="(msg, i) in chat.messages" :key="i" class="message" :class="msg.role">
         <div class="message-bubble">
-          <!-- User message — plain text -->
+          <!-- User message -->
           <span v-if="msg.role === 'user'" class="message-content user-content">{{
             msg.content
           }}</span>
 
-          <!-- Assistant message — markdown or error -->
+          <!-- Assistant message -->
           <div v-else class="message-content assistant-content">
             <div v-if="msg.error" class="msg-error">
               <svg
@@ -108,13 +146,63 @@ const isStreaming = computed(() => {
             <span v-if="msg.streaming && !msg.error" class="cursor-blink" />
           </div>
 
-          <span class="message-time">{{ formatTime(msg.ts) }}</span>
+          <!-- Message footer: timestamp + re-roll on last assistant msg -->
+          <div
+            class="message-footer"
+            :class="{
+              'has-reroll':
+                msg.role === 'assistant' &&
+                i === lastAssistantIdx &&
+                !isStreaming &&
+                !msg.error &&
+                msg.content,
+            }"
+          >
+            <span class="message-time">{{ formatTime(msg.ts) }}</span>
+            <button
+              v-if="
+                msg.role === 'assistant' &&
+                i === lastAssistantIdx &&
+                !isStreaming &&
+                !msg.error &&
+                msg.content
+              "
+              class="reroll-btn"
+              title="Regenerate response"
+              @click="emit('regenerate')"
+            >
+              <svg
+                xmlns="http://www.w3.org/2000/svg"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="1.8"
+                stroke-linecap="round"
+                stroke-linejoin="round"
+              >
+                <polyline points="1 4 1 10 7 10" />
+                <polyline points="23 20 23 14 17 14" />
+                <path d="M20.49 9A9 9 0 0 0 5.64 5.64L1 10m22 4l-4.64 4.36A9 9 0 0 1 3.51 15" />
+              </svg>
+              Regenerate
+            </button>
+          </div>
         </div>
       </div>
     </div>
 
-    <!-- Input -->
+    <!-- Input area -->
     <div class="chat-input-area">
+      <!-- Stop button — shown while streaming -->
+      <Transition name="stop-fade">
+        <button v-if="isStreaming" class="stop-btn" @click="emit('stop')">
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor">
+            <rect x="4" y="4" width="16" height="16" rx="2" />
+          </svg>
+          Stop generating
+        </button>
+      </Transition>
+
       <PromptBar
         :placeholder="`Message ${chat.model ?? 'assistant'}...`"
         :disabled="isStreaming"
@@ -132,6 +220,7 @@ const isStreaming = computed(() => {
   overflow: hidden;
 }
 
+/* Header */
 .chat-header {
   display: flex;
   align-items: center;
@@ -250,7 +339,7 @@ const isStreaming = computed(() => {
   background: #2a0808;
   border: 1px solid #4a1a1a;
   color: var(--beige);
-  font-family: var(--font-mono), monospace;
+  font-family: var(--font-sans), sans-serif;
   font-size: 13px;
   line-height: 1.6;
   white-space: pre-wrap;
@@ -311,7 +400,18 @@ const isStreaming = computed(() => {
   margin-top: 1px;
 }
 
-/* Timestamp */
+/* Message footer (time + re-roll) */
+.message-footer {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-height: 18px;
+}
+
+.message.user .message-footer {
+  justify-content: flex-end;
+}
+
 .message-time {
   font-family: var(--font-mono), monospace;
   font-size: 10px;
@@ -319,20 +419,102 @@ const isStreaming = computed(() => {
   padding: 0 2px;
 }
 
+/* Re-roll button */
+.reroll-btn {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  background: transparent;
+  border: none;
+  padding: 2px 6px;
+  border-radius: 4px;
+  color: #5a3020;
+  font-family: var(--font-mono), monospace;
+  font-size: 10px;
+  letter-spacing: 0.06em;
+  cursor: pointer;
+  opacity: 0;
+  transition:
+    opacity 0.15s,
+    color 0.15s,
+    background 0.15s;
+}
+.reroll-btn svg {
+  width: 11px;
+  height: 11px;
+}
+
+.message-footer.has-reroll:hover .reroll-btn,
+.message.assistant:hover .reroll-btn {
+  opacity: 1;
+}
+.reroll-btn:hover {
+  color: var(--orange);
+  background: rgba(240, 118, 12, 0.08);
+}
+
 /* Input area */
 .chat-input-area {
   flex-shrink: 0;
-  padding: 16px 24px 20px;
+  padding: 12px 24px 20px;
   border-top: 1px solid #1e0808;
   display: flex;
-  justify-content: center;
+  flex-direction: column;
+  align-items: center;
+  gap: 10px;
+}
+
+/* Stop button */
+.stop-btn {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 7px 18px;
+  background: #1a0404;
+  border: 1px solid #6a2010;
+  border-radius: 20px;
+  color: #e08060;
+  font-family: var(--font-mono), monospace;
+  font-size: 11px;
+  letter-spacing: 0.08em;
+  cursor: pointer;
+  transition:
+    background 0.15s,
+    border-color 0.15s,
+    color 0.15s,
+    box-shadow 0.15s;
+}
+.stop-btn svg {
+  width: 11px;
+  height: 11px;
+  color: #e05030;
+  flex-shrink: 0;
+}
+.stop-btn:hover {
+  background: #2a0808;
+  border-color: #e05030;
+  color: var(--beige);
+  box-shadow: 0 0 14px rgba(200, 60, 30, 0.2);
+}
+
+.stop-fade-enter-active,
+.stop-fade-leave-active {
+  transition:
+    opacity 0.15s ease,
+    transform 0.15s ease;
+}
+.stop-fade-enter-from,
+.stop-fade-leave-to {
+  opacity: 0;
+  transform: translateY(4px);
 }
 </style>
 
-<!-- Markdown styles (unscoped so they apply inside v-html) -->
+<!-- Markdown styles (unscoped — applied inside v-html) -->
 <style>
 .markdown-body {
   color: #e0c8b0;
+  font-family: var(--font-sans), sans-serif;
 }
 
 .markdown-body p {
@@ -402,7 +584,7 @@ const isStreaming = computed(() => {
   margin: 14px 0;
 }
 
-/* Inline code */
+/* Inline code — mono font only here */
 .markdown-body code:not(pre code) {
   font-family: var(--font-mono), monospace;
   font-size: 12px;
@@ -413,7 +595,7 @@ const isStreaming = computed(() => {
   color: #f0a070;
 }
 
-/* Code blocks */
+/* Code blocks — mono font only here */
 .markdown-body pre {
   background: #0e0000;
   border: 1px solid #2e1010;
@@ -434,7 +616,48 @@ const isStreaming = computed(() => {
   padding: 0;
 }
 
-/* highlight.js token overrides to match the theme */
+/* Copy button */
+.copy-btn {
+  position: absolute;
+  top: 8px;
+  right: 8px;
+  width: 26px;
+  height: 26px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: #1e0808;
+  border: 1px solid #3a1a1a;
+  border-radius: 5px;
+  color: #6a4030;
+  cursor: pointer;
+  opacity: 0;
+  transition:
+    opacity 0.15s,
+    color 0.15s,
+    border-color 0.15s,
+    background 0.15s;
+  padding: 0;
+}
+.copy-btn svg {
+  width: 12px;
+  height: 12px;
+}
+.markdown-body pre:hover .copy-btn {
+  opacity: 1;
+}
+.copy-btn:hover {
+  color: var(--beige);
+  border-color: #6a2a2a;
+  background: #2a0a0a;
+}
+.copy-btn.copied {
+  opacity: 1;
+  color: #4aaa55;
+  border-color: #2a5a30;
+}
+
+/* highlight.js tokens */
 .markdown-body .hljs-keyword {
   color: #e05a3a;
 }
