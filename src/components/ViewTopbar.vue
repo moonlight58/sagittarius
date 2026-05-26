@@ -181,9 +181,7 @@ function pickModel(name) {
   border-bottom: 1px solid var(--topbar-border);
   flex-shrink: 0;
   flex-wrap: wrap;
-  background:
-    linear-gradient(180deg, rgba(255, 255, 255, 0.035), transparent),
-    var(--color-bg);
+  background: var(--color-bg);
   transition:
     border-color 0.25s ease,
     background 0.25s ease;
@@ -194,7 +192,7 @@ function pickModel(name) {
   align-items: center;
   gap: 7px;
   padding: 6px 12px;
-  border-radius: 7px;
+  border-radius: 8px;
   font-family: var(--font-mono), monospace;
   font-size: 11px;
 }
@@ -207,7 +205,7 @@ function pickModel(name) {
 
 .status-pill.error {
   color: var(--status-error-color);
-  background: rgba(180, 30, 10, 0.08);
+  background: rgba(176, 64, 48, 0.05);
   border: 1px solid var(--model-selector-border);
 }
 
@@ -226,7 +224,7 @@ function pickModel(name) {
 .retry-btn {
   background: transparent;
   border: 1px solid var(--model-selector-border);
-  border-radius: 4px;
+  border-radius: 6px;
   color: var(--status-error-color);
   font-family: var(--font-mono), monospace;
   font-size: 10px;
@@ -239,7 +237,7 @@ function pickModel(name) {
     border-color 0.15s;
 }
 .retry-btn:hover {
-  background: rgba(180, 30, 10, 0.1);
+  background: rgba(176, 64, 48, 0.08);
   border-color: var(--status-error-color);
 }
 
@@ -270,7 +268,7 @@ function pickModel(name) {
   justify-content: center;
   background: transparent;
   border: 1px solid var(--icon-btn-border);
-  border-radius: 7px;
+  border-radius: 8px;
   color: var(--icon-btn-color);
   cursor: pointer;
   transition:
@@ -304,7 +302,7 @@ function pickModel(name) {
   padding: 7px 12px;
   background: var(--model-selector-bg);
   border: 1px solid var(--model-selector-border);
-  border-radius: 7px;
+  border-radius: 8px;
   color: var(--beige);
   font-family: var(--font-mono), monospace;
   font-size: 12px;
@@ -329,7 +327,6 @@ function pickModel(name) {
 }
 .model-dot.active {
   background: var(--orange);
-  box-shadow: 0 0 6px rgba(240, 118, 12, 0.5);
 }
 
 .chevron {
@@ -351,10 +348,9 @@ function pickModel(name) {
   min-width: 100%;
   background: var(--model-dropdown-bg);
   border: 1px solid var(--model-selector-border);
-  border-radius: 8px;
+  border-radius: 10px;
   overflow: hidden;
   z-index: 50;
-  box-shadow: 0 16px 38px rgba(0, 0, 0, 0.26);
   transition: background 0.25s ease;
 }
 
@@ -391,7 +387,7 @@ function pickModel(name) {
   padding: 7px 13px;
   background: var(--model-selector-bg);
   border: 1px solid var(--modal-border);
-  border-radius: 7px;
+  border-radius: 8px;
   color: var(--beige);
   font-family: var(--font-sans), sans-serif;
   font-size: 11px;
@@ -401,7 +397,6 @@ function pickModel(name) {
   transition:
     background 0.15s,
     border-color 0.15s,
-    box-shadow 0.15s,
     color 0.25s ease;
 }
 .ollama-btn svg {
@@ -410,9 +405,8 @@ function pickModel(name) {
   color: var(--orange);
 }
 .ollama-btn:hover {
-  background: rgba(242, 122, 26, 0.1);
+  background: var(--sidebar-tab-hover-bg);
   border-color: var(--orange);
-  box-shadow: 0 8px 22px rgba(242, 122, 26, 0.1);
 }
 
 .dropdown-fade-enter-active,

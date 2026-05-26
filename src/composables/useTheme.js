@@ -2,7 +2,7 @@ import { ref, watch } from 'vue'
 
 const STORAGE_KEY = 'sagittarius:theme'
 
-const theme = ref(localStorage.getItem(STORAGE_KEY) ?? 'dark')
+const theme = ref(localStorage.getItem(STORAGE_KEY) ?? 'light')
 
 function applyTheme(val) {
   document.documentElement.setAttribute('data-theme', val)

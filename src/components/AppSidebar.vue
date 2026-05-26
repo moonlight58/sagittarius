@@ -247,11 +247,8 @@ const tabIcons = {
   flex-direction: column;
   width: 236px;
   min-height: 100vh;
-  background:
-    linear-gradient(180deg, rgba(255, 255, 255, 0.035), transparent 180px),
-    var(--sidebar-bg);
+  background: var(--sidebar-bg);
   border-right: 1px solid var(--sidebar-border);
-  box-shadow: 10px 0 28px rgba(0, 0, 0, 0.18);
   transition:
     width 0.3s cubic-bezier(0.4, 0, 0.2, 1),
     background-color 0.25s ease,
@@ -281,7 +278,6 @@ const tabIcons = {
   height: 28px;
   flex-shrink: 0;
   color: var(--orange);
-  filter: drop-shadow(0 0 5px rgba(240, 118, 12, 0.4));
 }
 .logo-icon svg {
   width: 100%;
@@ -329,11 +325,9 @@ const tabIcons = {
 .tab-btn:hover {
   background: var(--sidebar-tab-hover-bg);
   color: var(--beige);
-  border-color: var(--sidebar-logo-border);
 }
 .tab-btn.active {
   background: var(--sidebar-tab-active-bg);
-  border-color: rgba(242, 122, 26, 0.28);
   color: var(--orange);
 }
 
@@ -367,13 +361,12 @@ const tabIcons = {
   height: 4px;
   background: var(--orange);
   border-radius: 999px;
-  box-shadow: 0 0 10px rgba(242, 122, 26, 0.7);
 }
 
 .sidebar-divider {
-  margin: 2px 14px 0;
+  margin: 12px 14px;
   height: 1px;
-  background: linear-gradient(90deg, transparent, var(--sidebar-divider), transparent);
+  background: var(--sidebar-divider);
   flex-shrink: 0;
   transition: background 0.25s ease;
 }
@@ -461,11 +454,9 @@ const tabIcons = {
 .history-item:hover {
   background: var(--history-item-hover-bg);
   color: var(--sidebar-tab-color);
-  border-color: var(--sidebar-logo-border);
 }
 .history-item.active {
   background: var(--history-item-active-bg);
-  border-color: rgba(242, 122, 26, 0.22);
   color: var(--beige);
 }
 
@@ -504,7 +495,7 @@ const tabIcons = {
 }
 .history-delete:hover {
   color: #e05040;
-  background: rgba(200, 50, 30, 0.12);
+  background: rgba(200, 50, 30, 0.08);
 }
 .history-delete svg {
   width: 12px;
@@ -592,14 +583,12 @@ const tabIcons = {
   transition:
     color 0.25s ease,
     background 0.25s ease,
-    box-shadow 0.25s ease,
     border-color 0.25s ease;
   padding: 0;
 }
 
 .collapse-toggle:hover {
   color: var(--orange);
-  box-shadow: 0 0 10px rgba(240, 118, 12, 0.3);
 }
 
 .collapse-toggle svg {

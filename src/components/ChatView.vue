@@ -131,11 +131,9 @@ const isStreaming = computed(() => {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 13px 28px;
+  padding: 16px 28px;
   border-bottom: 1px solid var(--chat-header-border);
-  background:
-    linear-gradient(180deg, rgba(255, 255, 255, 0.025), transparent),
-    var(--color-bg);
+  background: var(--color-bg);
   flex-shrink: 0;
   transition: border-color 0.25s ease;
 }
@@ -163,8 +161,8 @@ const isStreaming = computed(() => {
   font-family: var(--font-mono), monospace;
   font-size: 11px;
   color: var(--orange);
-  background: rgba(242, 122, 26, 0.09);
-  border: 1px solid rgba(242, 122, 26, 0.24);
+  background: var(--model-selector-bg);
+  border: 1px solid var(--model-selector-border);
   border-radius: 999px;
   padding: 3px 10px;
   white-space: nowrap;
@@ -197,10 +195,10 @@ const isStreaming = computed(() => {
 .chat-messages {
   flex: 1;
   overflow-y: auto;
-  padding: 28px;
+  padding: 32px 28px;
   display: flex;
   flex-direction: column;
-  gap: 22px;
+  gap: 24px;
   scrollbar-width: thin;
   scrollbar-color: var(--sidebar-border) transparent;
 }
@@ -216,7 +214,7 @@ const isStreaming = computed(() => {
 .message.assistant { justify-content: flex-start; }
 
 .message-bubble {
-  max-width: min(78%, 880px);
+  max-width: min(82%, 880px);
   display: flex;
   flex-direction: column;
   gap: 4px;
@@ -227,14 +225,14 @@ const isStreaming = computed(() => {
 /* User bubble */
 .user-content {
   display: block;
-  padding: 11px 15px;
-  border-radius: 8px;
-  border-bottom-right-radius: 3px;
+  padding: 12px 16px;
+  border-radius: 12px;
+  border-bottom-right-radius: 4px;
   background: var(--user-bubble-bg);
   border: 1px solid var(--user-bubble-border);
   color: var(--user-bubble-color);
-  font-family: var(--font-mono), monospace;
-  font-size: 13.2px;
+  font-family: var(--font-sans), sans-serif;
+  font-size: 14px;
   line-height: 1.6;
   white-space: pre-wrap;
   word-break: break-word;
@@ -244,25 +242,21 @@ const isStreaming = computed(() => {
 /* Assistant bubble */
 .assistant-content {
   position: relative;
-  padding: 14px 17px;
-  border-radius: 8px;
-  border-bottom-left-radius: 3px;
-  background: var(--assistant-bubble-bg);
-  border: 1px solid var(--assistant-bubble-border);
+  padding: 4px 0;
+  background: transparent;
   color: var(--assistant-bubble-color);
   font-family: var(--font-sans), sans-serif;
-  font-size: 14px;
-  line-height: 1.72;
-  box-shadow: 0 10px 26px rgba(0, 0, 0, 0.12);
+  font-size: 15px;
+  line-height: 1.75;
   word-break: break-word;
-  transition: background 0.25s ease, border-color 0.25s ease, color 0.25s ease;
+  transition: color 0.25s ease;
 }
 
 /* Streaming cursor */
 .cursor-blink {
   display: inline-block;
   width: 2px;
-  height: 14px;
+  height: 15px;
   background: var(--orange);
   margin-left: 2px;
   vertical-align: middle;
@@ -284,6 +278,10 @@ const isStreaming = computed(() => {
   font-family: var(--font-mono), monospace;
   font-size: 12px;
   line-height: 1.5;
+  background: rgba(176, 64, 48, 0.05);
+  padding: 12px 16px;
+  border-radius: 8px;
+  border: 1px solid rgba(176, 64, 48, 0.1);
 }
 .msg-error svg { width: 14px; height: 14px; flex-shrink: 0; margin-top: 1px; }
 
@@ -293,19 +291,17 @@ const isStreaming = computed(() => {
   font-size: 10px;
   color: var(--status-muted-color);
   padding: 0 2px;
+  opacity: 0.6;
 }
 
 /* Input area */
 .chat-input-area {
   flex-shrink: 0;
-  padding: 18px 28px 22px;
-  border-top: 1px solid var(--chat-input-border);
-  background:
-    linear-gradient(180deg, transparent, rgba(0, 0, 0, 0.08)),
-    var(--color-bg);
+  padding: 24px 28px 32px;
+  background: var(--color-bg);
   display: flex;
   justify-content: center;
-  transition: border-color 0.25s ease;
+  transition: background 0.25s ease;
 }
 </style>
 
@@ -315,7 +311,7 @@ const isStreaming = computed(() => {
   color: var(--markdown-color);
 }
 
-.markdown-body p { margin: 0 0 10px; }
+.markdown-body p { margin: 0 0 16px; }
 .markdown-body p:last-child { margin-bottom: 0; }
 
 .markdown-body h1,
@@ -324,31 +320,31 @@ const isStreaming = computed(() => {
 .markdown-body h4 {
   font-family: var(--font-serif), serif;
   color: var(--markdown-h-color);
-  margin: 18px 0 8px;
-  line-height: 1.3;
+  margin: 24px 0 12px;
+  line-height: 1.4;
 }
-.markdown-body h1 { font-size: 1.3em; }
-.markdown-body h2 { font-size: 1.15em; }
-.markdown-body h3 { font-size: 1.05em; }
+.markdown-body h1 { font-size: 1.5em; }
+.markdown-body h2 { font-size: 1.3em; }
+.markdown-body h3 { font-size: 1.15em; }
 
 .markdown-body strong { color: var(--markdown-h-color); font-weight: 700; }
 .markdown-body em { color: var(--markdown-em-color); font-style: italic; }
 
 .markdown-body ul,
-.markdown-body ol { padding-left: 20px; margin: 6px 0 10px; }
-.markdown-body li { margin: 3px 0; }
+.markdown-body ol { padding-left: 24px; margin: 8px 0 16px; }
+.markdown-body li { margin: 6px 0; }
 
 .markdown-body a {
   color: var(--markdown-link-color);
   text-decoration: none;
-  border-bottom: 1px solid rgba(240, 118, 12, 0.3);
+  border-bottom: 1px solid rgba(201, 106, 42, 0.2);
 }
 .markdown-body a:hover { border-color: var(--orange); }
 
 .markdown-body blockquote {
   border-left: 3px solid var(--markdown-blockquote-border);
-  margin: 10px 0;
-  padding: 6px 14px;
+  margin: 16px 0;
+  padding: 8px 18px;
   color: var(--markdown-blockquote-color);
   font-style: italic;
 }
@@ -356,13 +352,13 @@ const isStreaming = computed(() => {
 .markdown-body hr {
   border: none;
   border-top: 1px solid var(--markdown-hr-color);
-  margin: 14px 0;
+  margin: 20px 0;
 }
 
 /* Inline code */
 .markdown-body code:not(pre code) {
   font-family: var(--font-mono), monospace;
-  font-size: 12px;
+  font-size: 12.5px;
   background: var(--markdown-code-bg);
   border: 1px solid var(--markdown-code-border);
   border-radius: 4px;
@@ -374,16 +370,16 @@ const isStreaming = computed(() => {
 .markdown-body pre {
   background: var(--markdown-pre-bg);
   border: 1px solid var(--markdown-pre-border);
-  border-radius: 7px;
-  padding: 14px 16px;
+  border-radius: 8px;
+  padding: 16px 18px;
   overflow-x: auto;
-  margin: 10px 0;
+  margin: 16px 0;
   position: relative;
 }
 
 .markdown-body pre code {
   font-family: var(--font-mono), monospace;
-  font-size: 12.5px;
+  font-size: 13px;
   line-height: 1.65;
   color: var(--markdown-pre-color);
   background: transparent;

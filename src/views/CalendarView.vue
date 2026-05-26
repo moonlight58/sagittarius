@@ -408,8 +408,8 @@ function useSlot(slot) {
   justify-content: space-between;
   gap: 16px;
   align-items: center;
-  padding: 14px;
-  border-radius: 8px;
+  padding: 16px 20px;
+  border-radius: 12px;
 }
 
 .kicker,
@@ -418,7 +418,7 @@ function useSlot(slot) {
   font-family: var(--font-mono), monospace;
   font-size: 10px;
   color: var(--status-muted-color);
-  letter-spacing: 0.08em;
+  letter-spacing: 0.1em;
   text-transform: uppercase;
 }
 
@@ -427,19 +427,22 @@ h2,
 h3 {
   font-family: var(--font-serif), serif;
   color: var(--beige);
-  letter-spacing: 0;
+  letter-spacing: -0.01em;
 }
 
 h1 {
-  font-size: 28px;
+  font-size: 32px;
+  line-height: 1.1;
 }
 
 h2 {
-  font-size: 18px;
+  font-size: 20px;
+  line-height: 1.2;
 }
 
 h3 {
-  font-size: 15px;
+  font-size: 16px;
+  line-height: 1.3;
 }
 
 .toolbar-actions,
@@ -474,9 +477,20 @@ button {
 .goal-list button,
 form button {
   border: 1px solid var(--icon-btn-border);
-  background: var(--model-selector-bg);
+  background: var(--surface-2);
   color: var(--beige);
-  border-radius: 6px;
+  border-radius: 8px;
+  transition: all 0.2s ease;
+}
+
+.nav-btn:hover,
+.segmented button:hover,
+.quiet-btn:hover,
+.quick-actions button:hover,
+.slot-list button:hover,
+form button:hover {
+  background: var(--surface-3);
+  border-color: var(--orange);
 }
 
 .nav-btn {
@@ -493,7 +507,7 @@ form button {
 .segmented {
   padding: 3px;
   border: 1px solid var(--model-selector-border);
-  border-radius: 8px;
+  border-radius: 10px;
   background: var(--color-bg);
 }
 
@@ -508,7 +522,7 @@ form button {
 .segmented button.active {
   color: var(--beige);
   background: var(--sidebar-tab-active-bg);
-  border-color: var(--model-selector-border);
+  border-color: var(--orange);
 }
 
 .summary-strip {
@@ -516,8 +530,8 @@ form button {
   justify-content: space-between;
   gap: 16px;
   align-items: center;
-  padding: 12px 14px;
-  border-radius: 8px;
+  padding: 14px 20px;
+  border-radius: 12px;
 }
 
 .summary-strip p,
@@ -710,11 +724,11 @@ form button {
 .agenda-event {
   display: grid;
   grid-template-columns: 88px minmax(0, 1fr) 30px 30px;
-  gap: 10px;
+  gap: 12px;
   align-items: center;
-  border-left: 3px solid var(--orange);
-  border-radius: 8px;
-  padding: 12px;
+  border-left: 4px solid var(--orange);
+  border-radius: 12px;
+  padding: 16px;
 }
 
 .agenda-event time,
@@ -760,9 +774,17 @@ textarea {
   border: 1px solid var(--modal-input-border);
   background: var(--modal-input-bg);
   color: var(--beige);
-  border-radius: 6px;
-  padding: 9px 10px;
+  border-radius: 8px;
+  padding: 10px 12px;
   min-width: 0;
+  transition: border-color 0.2s ease;
+}
+
+input:focus,
+select:focus,
+textarea:focus {
+  outline: none;
+  border-color: var(--orange);
 }
 
 textarea {
