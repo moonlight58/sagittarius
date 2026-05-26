@@ -138,7 +138,7 @@ function submit() {
 .remove-file:hover { color: var(--red); }
 
 .attach-btn {
-  background: none; border: none; cursor: pointer; padding: 10px; color: var(--text-muted);
+  background: none; border: none; cursor: pointer; padding: 12px; color: var(--text-muted);
   display: flex; align-items: center; justify-content: center;
 }
 .attach-btn:hover { color: var(--orange); }
