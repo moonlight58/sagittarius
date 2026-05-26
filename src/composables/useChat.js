@@ -1,18 +1,20 @@
 import { ref, reactive, computed, watch } from 'vue'
-import { ollamaHost } from './useSettings.js'
+import { ollamaHost, systemPrompts } from './useSettings.js'
+import { useNotes } from './useNotes.js'
 
-// ── System prompts per tab ─────────────────────────────────────────────────
-const SYSTEM_PROMPTS = {
-  code: `You are an expert programming assistant. Help the user write, review, debug, and refactor code.
-When sharing code, always use fenced code blocks with the correct language tag (e.g. \`\`\`python).
-Be concise and precise. Prefer working examples over lengthy prose explanations.`,
+const { notes } = useNotes()
 
-  mail: `You are a professional email writing assistant. Help the user draft, rewrite, summarise, or improve emails.
-Always output the final email in a clearly formatted block. Adapt tone to context — formal for business, casual for personal.
-If asked to rewrite or polish, output only the improved version unless the user asks for explanation.`,
+function getRelevantContext(content) {
+  if (!content || !notes.value.length) return ''
+  const words = content.toLowerCase().split(/\s+/).filter(w => w.length > 3)
+  const relevant = notes.value.filter(n => {
+    const text = (n.title + ' ' + n.content).toLowerCase()
+    return words.some(w => text.includes(w))
+  }).slice(0, 3)
 
-  calendar: `You are an intelligent calendar assistant. Help the user schedule events, resolve conflicts, summarize days, and turn goals into realistic time blocks.
-Prefer concrete dates, start times, end times, and short event titles. Keep all scheduling local to the user's calendar data.`,
+  if (!relevant.length) return ''
+  
+  return `\n\nRelevant information from the user's personal knowledge base:\n${relevant.map(n => `--- NOTE: ${n.title} ---\n${n.content}`).join('\n\n')}`
 }
 
 // ── Shared model state ─────────────────────────────────────────────────────
@@ -98,6 +100,7 @@ const tabStates = {
   code: createTabState('code'),
   mail: createTabState('mail'),
   calendar: createTabState('calendar'),
+  notes: createTabState('notes'),
 }
 
 let nextId = Date.now()
@@ -162,7 +165,7 @@ async function streamChat(model, messages, systemPrompt, signal, onChunk, onDone
 // ── Public composable ──────────────────────────────────────────────────────
 export function useChat(tab) {
   const { chats, activeChatId, activeAbortController } = tabStates[tab]
-  const systemPrompt = SYSTEM_PROMPTS[tab] ?? null
+  const systemPrompt = computed(() => systemPrompts.value[tab] ?? null)
 
   const activeChat = computed(
     () => chats.value.find((c) => c.id === activeChatId.value) ?? null,
@@ -221,10 +224,13 @@ export function useChat(tab) {
     const controller = new AbortController()
     activeAbortController.value = controller
 
+    const context = getRelevantContext(content)
+    const effectiveSystemPrompt = systemPrompt.value ? (systemPrompt.value + context) : (context || null)
+
     await streamChat(
       chat.model,
       chat.messages.slice(0, -1),
-      systemPrompt,
+      effectiveSystemPrompt,
       controller.signal,
       (token) => {
         assistantMsg.content += token

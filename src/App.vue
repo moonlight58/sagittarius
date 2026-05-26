@@ -1,15 +1,26 @@
 <script setup>
-import { onMounted, onUnmounted } from 'vue'
+import { ref, onMounted, onUnmounted } from 'vue'
 import { useRoute } from 'vue-router'
 import AppSidebar from './components/AppSidebar.vue'
+import CommandPalette from './components/CommandPalette.vue'
 import { useChat } from './composables/useChat.js'
 
 const route = useRoute()
+const showPalette = ref(false)
 
 function handleKeydown(e) {
-  if ((e.metaKey || e.ctrlKey) && e.key === 'k') {
+  const isK = e.key.toLowerCase() === 'k'
+  const isModifier = e.metaKey || e.ctrlKey
+
+  if (isModifier && isK) {
     e.preventDefault()
-    // Determine active tab from current route
+    showPalette.value = !showPalette.value
+    return
+  }
+
+  // Legacy quick new chat shortcut
+  if (isModifier && e.key === 'n') {
+    e.preventDefault()
     if (route.path === '/code') {
       useChat('code').newChat()
     } else if (route.path === '/mail') {
@@ -28,6 +39,8 @@ onUnmounted(() => document.removeEventListener('keydown', handleKeydown))
     <main class="app-main">
       <router-view />
     </main>
+
+    <CommandPalette v-model="showPalette" />
   </div>
 </template>
 

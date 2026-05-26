@@ -1,15 +1,45 @@
 <script setup>
-import { ref, onMounted } from 'vue'
+import { ref, onMounted, computed } from 'vue'
 import { useRouter } from 'vue-router'
+import { useCalendar } from '../composables/useCalendar.js'
+import { useChat } from '../composables/useChat.js'
+
+import { useNotes } from '../composables/useNotes.js'
 
 const router = useRouter()
 const visible = ref(false)
+const calendar = useCalendar()
+const notesStore = useNotes()
+const codeChat = useChat('code')
+const mailChat = useChat('mail')
 
 onMounted(() => {
   setTimeout(() => {
     visible.value = true
   }, 100)
 })
+
+const todayEvents = computed(() => calendar.eventsForDate(calendar.todayKey()).slice(0, 4))
+const pendingGoals = computed(() => calendar.goals.value.slice(0, 4))
+const recentNotes = computed(() => notesStore.notes.value.slice(0, 3))
+const recentChats = computed(() => {
+  const all = [
+    ...codeChat.chats.value.map((c) => ({ ...c, tab: 'code', accent: '#f0760c' })),
+    ...mailChat.chats.value.map((c) => ({ ...c, tab: 'mail', accent: '#c84a30' })),
+  ]
+  return all.sort((a, b) => b.id - a.id).slice(0, 3)
+})
+
+const ollamaStatus = computed(() => ({
+  active: !!codeChat.activeModel.value,
+  model: codeChat.activeModel.value,
+  loading: codeChat.modelsLoading.value,
+  error: codeChat.modelsError.value,
+}))
+
+function formatDate(ts) {
+  return new Date(ts).toLocaleDateString([], { month: 'short', day: 'numeric' })
+}
 
 const features = [
   {
@@ -39,9 +69,18 @@ const features = [
     label: 'Calendar',
     tagline: 'Plan. Schedule. Focus.',
     description:
-      'Coming soon — intelligent scheduling that understands context and helps you protect deep-work time.',
+      'intelligent scheduling that understands context and helps you protect deep-work time.',
     accent: '#5aa7ff',
-    soon: true,
+  },
+  {
+    id: 'notes',
+    path: '/notes',
+    icon: `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M14.5 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7.5L14.5 2z"/><polyline points="14 2 14 8 20 8"/></svg>`,
+    label: 'Notes',
+    tagline: 'Store. Search. Connect.',
+    description:
+      'Your personal knowledge base. Store snippets, thoughts, and documents for the AI to reference.',
+    accent: '#58c98b',
   },
 ]
 </script>
@@ -82,14 +121,136 @@ const features = [
           A private, model-agnostic assistant for the work you do every day.<br />
           Run your own models. Own your context.
         </p>
-      </div>
 
-      <div class="hero-divider">
-        <span class="divider-line" />
-        <span class="divider-label">Select a workspace</span>
-        <span class="divider-line" />
+        <!-- System Status Bar -->
+        <div class="status-bar" :class="{ error: ollamaStatus.error }">
+          <div
+            class="status-indicator"
+            :class="{ active: ollamaStatus.active, loading: ollamaStatus.loading }"
+          />
+          <span class="status-text">
+            {{
+              ollamaStatus.loading
+                ? 'Connecting to Ollama...'
+                : ollamaStatus.error
+                  ? ollamaStatus.error
+                  : ollamaStatus.active
+                    ? `Ollama Active: ${ollamaStatus.model}`
+                    : 'Ollama Offline'
+            }}
+          </span>
+          <button
+            v-if="ollamaStatus.error || !ollamaStatus.active"
+            class="refresh-btn"
+            @click="codeChat.refreshModels"
+          >
+            Retry
+          </button>
+        </div>
       </div>
     </section>
+
+    <!-- Quick Actions -->
+    <section class="quick-actions-row">
+      <button class="action-card" @click="router.push('/code').then(() => codeChat.newChat())">
+        <span class="action-icon">󰌢</span>
+        <span class="action-label">New Code Chat</span>
+      </button>
+      <button class="action-card" @click="router.push('/mail').then(() => mailChat.newChat())">
+        <span class="action-icon"></span>
+        <span class="action-label">Draft Email</span>
+      </button>
+      <button class="action-card" @click="router.push('/notes').then(() => notesStore.addNote())">
+        <span class="action-icon">󰎝</span>
+        <span class="action-label">New Note</span>
+      </button>
+      <button class="action-card" @click="router.push('/calendar')">
+        <span class="action-icon">󰃭</span>
+        <span class="action-label">Add Event</span>
+      </button>
+    </section>
+
+    <!-- Dashboard Widgets -->
+    <section class="dashboard-grid">
+      <!-- Today's Agenda -->
+      <div class="widget">
+        <header class="widget-header">
+          <span class="widget-label">Today's Agenda</span>
+          <router-link to="/calendar" class="widget-link">View All</router-link>
+        </header>
+        <div class="widget-content">
+          <div v-for="event in todayEvents" :key="event.id" class="event-item" :class="event.type">
+            <span class="event-time">{{ event.start }}</span>
+            <span class="event-title">{{ event.title }}</span>
+          </div>
+          <p v-if="!todayEvents.length" class="empty-hint">No events scheduled for today.</p>
+        </div>
+      </div>
+
+      <!-- Current Goals -->
+      <div class="widget">
+        <header class="widget-header">
+          <span class="widget-label">Focus Goals</span>
+          <router-link to="/calendar" class="widget-link">Manage</router-link>
+        </header>
+        <div class="widget-content">
+          <div v-for="goal in pendingGoals" :key="goal.id" class="goal-item">
+            <span class="goal-priority" :class="goal.priority" />
+            <span class="goal-title">{{ goal.title }}</span>
+            <span class="goal-meta">{{ goal.minutes }}m</span>
+          </div>
+          <p v-if="!pendingGoals.length" class="empty-hint">No active goals. Time to plan?</p>
+        </div>
+      </div>
+
+      <!-- Knowledge Base -->
+      <div class="widget">
+        <header class="widget-header">
+          <span class="widget-label">Knowledge Base</span>
+          <router-link to="/notes" class="widget-link">Notes</router-link>
+        </header>
+        <div class="widget-content">
+          <div
+            v-for="note in recentNotes"
+            :key="note.id"
+            class="note-widget-item"
+            @click="router.push('/notes')"
+          >
+            <span class="note-widget-title">{{ note.title }}</span>
+            <span class="note-widget-date">{{ formatDate(note.ts) }}</span>
+          </div>
+          <p v-if="!recentNotes.length" class="empty-hint">No notes saved yet.</p>
+        </div>
+      </div>
+
+      <!-- Recent Activity -->
+      <div class="widget">
+        <header class="widget-header">
+          <span class="widget-label">Recent Sessions</span>
+        </header>
+        <div class="widget-content">
+          <div
+            v-for="chat in recentChats"
+            :key="chat.id"
+            class="activity-item"
+            @click="router.push(`/${chat.tab}`)"
+          >
+            <span class="activity-accent" :style="{ background: chat.accent }" />
+            <div class="activity-body">
+              <span class="activity-title">{{ chat.title }}</span>
+              <span class="activity-meta">{{ chat.tab }} session</span>
+            </div>
+          </div>
+          <p v-if="!recentChats.length" class="empty-hint">No recent conversations.</p>
+        </div>
+      </div>
+    </section>
+
+    <div class="hero-divider">
+      <span class="divider-line" />
+      <span class="divider-label">Workspaces</span>
+      <span class="divider-line" />
+    </div>
 
     <!-- Feature cards -->
     <section class="features">
@@ -235,19 +396,19 @@ const features = [
   display: flex;
   flex-direction: column;
   align-items: center;
-  padding-top: 72px;
-  padding-bottom: 56px;
+  padding-top: 60px;
+  padding-bottom: 40px;
   width: 100%;
   max-width: 860px;
 }
 
 .hero-logo {
-  margin-bottom: 32px;
+  margin-bottom: 24px;
 }
 
 .hero-svg {
-  width: 80px;
-  height: 80px;
+  width: 70px;
+  height: 70px;
   color: var(--orange);
   filter: drop-shadow(0 0 28px rgba(240, 118, 12, 0.45));
   animation: logo-pulse 5s ease-in-out infinite;
@@ -282,7 +443,7 @@ const features = [
 
 .hero-title {
   font-family: var(--font-serif), serif;
-  font-size: clamp(3rem, 8vw, 5.5rem);
+  font-size: clamp(2.5rem, 8vw, 4.5rem);
   font-weight: 800;
   line-height: 1;
   margin: 0;
@@ -308,11 +469,347 @@ const features = [
   text-align: center;
 }
 
+/* ── Quick Actions ── */
+.quick-actions-row {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 12px;
+  width: 100%;
+  max-width: 860px;
+  margin-bottom: 24px;
+  z-index: 1;
+}
+
+@media (max-width: 600px) {
+  .quick-actions-row {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+.action-card {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  padding: 14px;
+  background: var(--surface-1);
+  border: 1px solid var(--assistant-bubble-border);
+  border-radius: 10px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.action-card:hover {
+  border-color: var(--orange);
+  background: var(--sidebar-tab-hover-bg);
+  transform: translateY(-2px);
+}
+
+.action-icon {
+  font-family: var(--font-mono), monospace;
+  color: var(--orange);
+  font-size: 18px;
+}
+
+.action-label {
+  font-family: var(--font-mono), monospace;
+  font-size: 10px;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--beige);
+}
+
+/* ── Status Bar ── */
+.status-bar {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-top: 24px;
+  padding: 6px 14px;
+  background: var(--model-selector-bg);
+  border: 1px solid var(--model-selector-border);
+  border-radius: 99px;
+  transition: all 0.3s ease;
+}
+
+.status-bar.error {
+  border-color: var(--status-error-color);
+  background: rgba(255, 131, 117, 0.05);
+}
+
+.status-indicator {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--model-dot-inactive);
+}
+
+.status-indicator.active {
+  background: var(--accent-green);
+  box-shadow: 0 0 8px var(--accent-green);
+}
+
+.status-indicator.loading {
+  background: var(--status-loading-color);
+  animation: pulse 1.5s infinite;
+}
+
+@keyframes pulse {
+  0% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.4;
+  }
+  100% {
+    opacity: 1;
+  }
+}
+
+.status-text {
+  font-family: var(--font-mono), monospace;
+  font-size: 10px;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--status-muted-color);
+}
+
+.refresh-btn {
+  background: transparent;
+  border: none;
+  color: var(--orange);
+  font-family: var(--font-mono), monospace;
+  font-size: 10px;
+  text-transform: uppercase;
+  cursor: pointer;
+  padding: 0;
+  text-decoration: underline;
+}
+
+/* ── Dashboard Grid ── */
+.dashboard-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 16px;
+  width: 100%;
+  max-width: 860px;
+  margin-bottom: 40px;
+  z-index: 1;
+}
+
+@media (max-width: 700px) {
+  .dashboard-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+.widget {
+  background: var(--surface-1);
+  border: 1px solid var(--assistant-bubble-border);
+  border-radius: 12px;
+  padding: 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  min-height: 180px;
+}
+
+.widget-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.widget-label {
+  font-family: var(--font-mono), monospace;
+  font-size: 10px;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  color: var(--status-muted-color);
+}
+
+.widget-link {
+  font-family: var(--font-mono), monospace;
+  font-size: 10px;
+  color: var(--orange);
+  text-decoration: none;
+  opacity: 0.8;
+}
+
+.widget-link:hover {
+  opacity: 1;
+  text-decoration: underline;
+}
+
+.widget-content {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+/* Event items */
+.event-item {
+  display: flex;
+  gap: 10px;
+  align-items: center;
+  padding: 6px 10px;
+  background: var(--surface-2);
+  border-radius: 6px;
+  border-left: 3px solid var(--orange);
+}
+
+.event-item.focus {
+  border-left-color: var(--accent-blue);
+}
+.event-item.goal {
+  border-left-color: var(--accent-green);
+}
+
+.event-time {
+  font-family: var(--font-mono), monospace;
+  font-size: 10px;
+  color: var(--text-muted);
+  white-space: nowrap;
+}
+
+.event-title {
+  font-size: 12px;
+  color: var(--beige);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* Goal items */
+.goal-item {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  padding: 6px 10px;
+  background: var(--surface-2);
+  border-radius: 6px;
+}
+
+.goal-priority {
+  width: 5px;
+  height: 5px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+.goal-priority.high {
+  background: var(--status-error-color);
+}
+.goal-priority.medium {
+  background: var(--orange);
+}
+.goal-priority.low {
+  background: var(--status-muted-color);
+}
+
+.goal-title {
+  flex: 1;
+  font-size: 12px;
+  color: var(--beige);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.goal-meta {
+  font-family: var(--font-mono), monospace;
+  font-size: 9px;
+  color: var(--text-muted);
+}
+
+/* Note items */
+.note-widget-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 6px 10px;
+  background: var(--surface-2);
+  border-radius: 6px;
+  cursor: pointer;
+  transition: background 0.2s ease;
+}
+
+.note-widget-item:hover {
+  background: var(--surface-3);
+}
+
+.note-widget-title {
+  font-size: 12px;
+  color: var(--beige);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  flex: 1;
+  margin-right: 10px;
+}
+
+.note-widget-date {
+  font-family: var(--font-mono), monospace;
+  font-size: 9px;
+  color: var(--text-muted);
+}
+
+/* Activity items */
+.activity-item {
+  display: flex;
+  gap: 10px;
+  align-items: center;
+  padding: 6px 10px;
+  background: var(--surface-2);
+  border-radius: 6px;
+  cursor: pointer;
+  transition: background 0.2s ease;
+}
+
+.activity-item:hover {
+  background: var(--surface-3);
+}
+
+.activity-accent {
+  width: 3px;
+  height: 20px;
+  border-radius: 2px;
+}
+
+.activity-body {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+
+.activity-title {
+  font-size: 12px;
+  color: var(--beige);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.activity-meta {
+  font-family: var(--font-mono), monospace;
+  font-size: 9px;
+  color: var(--text-muted);
+  text-transform: uppercase;
+}
+
+.empty-hint {
+  font-size: 12px;
+  color: var(--text-muted);
+  font-style: italic;
+  text-align: center;
+  margin: 10px 0;
+}
+
+/* ── Hero Divider ── */
 .hero-divider {
   display: flex;
   align-items: center;
   gap: 16px;
-  margin-top: 52px;
+  margin-top: 20px;
   width: 100%;
   max-width: 520px;
 }
@@ -341,6 +838,7 @@ const features = [
   gap: 16px;
   width: 100%;
   max-width: 860px;
+  margin-top: 24px;
 }
 
 @media (max-width: 680px) {
