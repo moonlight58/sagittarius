@@ -1,15 +1,45 @@
 <script setup>
-import { ref, onMounted } from 'vue'
+import { ref, onMounted, computed } from 'vue'
 import { useRouter } from 'vue-router'
+import { useCalendar } from '../composables/useCalendar.js'
+import { useChat } from '../composables/useChat.js'
+
+import { useNotes } from '../composables/useNotes.js'
 
 const router = useRouter()
 const visible = ref(false)
+const calendar = useCalendar()
+const notesStore = useNotes()
+const codeChat = useChat('code')
+const mailChat = useChat('mail')
 
 onMounted(() => {
   setTimeout(() => {
     visible.value = true
   }, 100)
 })
+
+const todayEvents = computed(() => calendar.eventsForDate(calendar.todayKey()).slice(0, 4))
+const pendingGoals = computed(() => calendar.goals.value.slice(0, 4))
+const recentNotes = computed(() => notesStore.notes.value.slice(0, 3))
+const recentChats = computed(() => {
+  const all = [
+    ...codeChat.chats.value.map((c) => ({ ...c, tab: 'code', accent: '#f0760c' })),
+    ...mailChat.chats.value.map((c) => ({ ...c, tab: 'mail', accent: '#c84a30' })),
+  ]
+  return all.sort((a, b) => b.id - a.id).slice(0, 3)
+})
+
+const ollamaStatus = computed(() => ({
+  active: !!codeChat.activeModel.value,
+  model: codeChat.activeModel.value,
+  loading: codeChat.modelsLoading.value,
+  error: codeChat.modelsError.value,
+}))
+
+function formatDate(ts) {
+  return new Date(ts).toLocaleDateString([], { month: 'short', day: 'numeric' })
+}
 
 const features = [
   {
@@ -39,20 +69,24 @@ const features = [
     label: 'Calendar',
     tagline: 'Plan. Schedule. Focus.',
     description:
-      'Coming soon — intelligent scheduling that understands context and helps you protect deep-work time.',
-    accent: '#870400',
-    soon: true,
+      'intelligent scheduling that understands context and helps you protect deep-work time.',
+    accent: '#5aa7ff',
+  },
+  {
+    id: 'notes',
+    path: '/notes',
+    icon: `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M14.5 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7.5L14.5 2z"/><polyline points="14 2 14 8 20 8"/></svg>`,
+    label: 'Notes',
+    tagline: 'Store. Search. Connect.',
+    description:
+      'Your personal knowledge base. Store snippets, thoughts, and documents for the AI to reference.',
+    accent: '#58c98b',
   },
 ]
 </script>
 
 <template>
   <div class="home" :class="{ visible }">
-    <!-- Ambient background layers -->
-    <div class="bg-glow bg-glow-1" />
-    <div class="bg-glow bg-glow-2" />
-    <div class="bg-noise" />
-
     <!-- Hero -->
     <section class="hero">
       <div class="hero-logo">
@@ -82,14 +116,136 @@ const features = [
           A private, model-agnostic assistant for the work you do every day.<br />
           Run your own models. Own your context.
         </p>
-      </div>
 
-      <div class="hero-divider">
-        <span class="divider-line" />
-        <span class="divider-label">Select a workspace</span>
-        <span class="divider-line" />
+        <!-- System Status Bar -->
+        <div class="status-bar" :class="{ error: ollamaStatus.error }">
+          <div
+            class="status-indicator"
+            :class="{ active: ollamaStatus.active, loading: ollamaStatus.loading }"
+          />
+          <span class="status-text">
+            {{
+              ollamaStatus.loading
+                ? 'Connecting to Ollama...'
+                : ollamaStatus.error
+                  ? ollamaStatus.error
+                  : ollamaStatus.active
+                    ? `Ollama Active: ${ollamaStatus.model}`
+                    : 'Ollama Offline'
+            }}
+          </span>
+          <button
+            v-if="ollamaStatus.error || !ollamaStatus.active"
+            class="refresh-btn"
+            @click="codeChat.refreshModels"
+          >
+            Retry
+          </button>
+        </div>
       </div>
     </section>
+
+    <!-- Quick Actions -->
+    <section class="quick-actions-row">
+      <button class="action-card" @click="router.push('/code').then(() => codeChat.newChat())">
+        <span class="action-icon">󰌢</span>
+        <span class="action-label">New Code Chat</span>
+      </button>
+      <button class="action-card" @click="router.push('/mail').then(() => mailChat.newChat())">
+        <span class="action-icon"></span>
+        <span class="action-label">Draft Email</span>
+      </button>
+      <button class="action-card" @click="router.push('/notes').then(() => notesStore.addNote())">
+        <span class="action-icon">󰎝</span>
+        <span class="action-label">New Note</span>
+      </button>
+      <button class="action-card" @click="router.push('/calendar')">
+        <span class="action-icon">󰃭</span>
+        <span class="action-label">Add Event</span>
+      </button>
+    </section>
+
+    <!-- Dashboard Widgets -->
+    <section class="dashboard-grid">
+      <!-- Today's Agenda -->
+      <div class="widget">
+        <header class="widget-header">
+          <span class="widget-label">Today's Agenda</span>
+          <router-link to="/calendar" class="widget-link">View All</router-link>
+        </header>
+        <div class="widget-content">
+          <div v-for="event in todayEvents" :key="event.id" class="event-item" :class="event.type">
+            <span class="event-time">{{ event.start }}</span>
+            <span class="event-title">{{ event.title }}</span>
+          </div>
+          <p v-if="!todayEvents.length" class="empty-hint">No events scheduled for today.</p>
+        </div>
+      </div>
+
+      <!-- Current Goals -->
+      <div class="widget">
+        <header class="widget-header">
+          <span class="widget-label">Focus Goals</span>
+          <router-link to="/calendar" class="widget-link">Manage</router-link>
+        </header>
+        <div class="widget-content">
+          <div v-for="goal in pendingGoals" :key="goal.id" class="goal-item">
+            <span class="goal-priority" :class="goal.priority" />
+            <span class="goal-title">{{ goal.title }}</span>
+            <span class="goal-meta">{{ goal.minutes }}m</span>
+          </div>
+          <p v-if="!pendingGoals.length" class="empty-hint">No active goals. Time to plan?</p>
+        </div>
+      </div>
+
+      <!-- Knowledge Base -->
+      <div class="widget">
+        <header class="widget-header">
+          <span class="widget-label">Knowledge Base</span>
+          <router-link to="/notes" class="widget-link">Notes</router-link>
+        </header>
+        <div class="widget-content">
+          <div
+            v-for="note in recentNotes"
+            :key="note.id"
+            class="note-widget-item"
+            @click="router.push('/notes')"
+          >
+            <span class="note-widget-title">{{ note.title }}</span>
+            <span class="note-widget-date">{{ formatDate(note.ts) }}</span>
+          </div>
+          <p v-if="!recentNotes.length" class="empty-hint">No notes saved yet.</p>
+        </div>
+      </div>
+
+      <!-- Recent Activity -->
+      <div class="widget">
+        <header class="widget-header">
+          <span class="widget-label">Recent Sessions</span>
+        </header>
+        <div class="widget-content">
+          <div
+            v-for="chat in recentChats"
+            :key="chat.id"
+            class="activity-item"
+            @click="router.push(`/${chat.tab}`)"
+          >
+            <span class="activity-accent" :style="{ background: chat.accent }" />
+            <div class="activity-body">
+              <span class="activity-title">{{ chat.title }}</span>
+              <span class="activity-meta">{{ chat.tab }} session</span>
+            </div>
+          </div>
+          <p v-if="!recentChats.length" class="empty-hint">No recent conversations.</p>
+        </div>
+      </div>
+    </section>
+
+    <div class="hero-divider">
+      <span class="divider-line" />
+      <span class="divider-label">Workspaces</span>
+      <span class="divider-line" />
+    </div>
 
     <!-- Feature cards -->
     <section class="features">
@@ -101,9 +257,6 @@ const features = [
         :style="{ '--accent': f.accent, '--delay': i * 80 + 'ms' }"
         @click="!f.soon && router.push(f.path)"
       >
-        <div class="card-corner card-corner-tl" />
-        <div class="card-corner card-corner-br" />
-
         <div class="card-icon-wrap">
           <span class="card-icon" v-html="f.icon" />
         </div>
@@ -132,8 +285,6 @@ const features = [
             </svg>
           </span>
         </div>
-
-        <div class="card-glow" />
       </div>
     </section>
 
@@ -159,66 +310,13 @@ const features = [
   opacity: 0;
   transform: translateY(10px);
   transition:
-    opacity 0.5s ease,
-    transform 0.5s ease;
+    opacity 0.25s ease,
+    transform 0.25s ease;
 }
 
 .home.visible {
   opacity: 1;
   transform: translateY(0);
-}
-
-/* ── Background ── */
-.bg-glow {
-  position: fixed;
-  border-radius: 50%;
-  pointer-events: none;
-  z-index: 0;
-  filter: blur(120px);
-}
-
-.bg-glow-1 {
-  width: 600px;
-  height: 400px;
-  background: radial-gradient(ellipse, rgba(135, 4, 0, 0.18) 0%, transparent 70%);
-  top: -100px;
-  right: -100px;
-  animation: drift1 12s ease-in-out infinite alternate;
-}
-
-.bg-glow-2 {
-  width: 500px;
-  height: 300px;
-  background: radial-gradient(ellipse, rgba(80, 0, 1, 0.14) 0%, transparent 70%);
-  bottom: 0;
-  left: -80px;
-  animation: drift2 15s ease-in-out infinite alternate;
-}
-
-@keyframes drift1 {
-  from {
-    transform: translate(0, 0);
-  }
-  to {
-    transform: translate(-40px, 30px);
-  }
-}
-@keyframes drift2 {
-  from {
-    transform: translate(0, 0);
-  }
-  to {
-    transform: translate(30px, -20px);
-  }
-}
-
-.bg-noise {
-  position: fixed;
-  inset: 0;
-  background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)' opacity='0.03'/%3E%3C/svg%3E");
-  pointer-events: none;
-  z-index: 0;
-  opacity: 0.6;
 }
 
 /* ── Hero ── */
@@ -228,8 +326,8 @@ const features = [
   display: flex;
   flex-direction: column;
   align-items: center;
-  padding-top: 72px;
-  padding-bottom: 56px;
+  padding-top: 80px;
+  padding-bottom: 60px;
   width: 100%;
   max-width: 860px;
 }
@@ -242,18 +340,6 @@ const features = [
   width: 80px;
   height: 80px;
   color: var(--orange);
-  filter: drop-shadow(0 0 28px rgba(240, 118, 12, 0.45));
-  animation: logo-pulse 5s ease-in-out infinite;
-}
-
-@keyframes logo-pulse {
-  0%,
-  100% {
-    filter: drop-shadow(0 0 20px rgba(240, 118, 12, 0.3));
-  }
-  50% {
-    filter: drop-shadow(0 0 40px rgba(240, 118, 12, 0.6));
-  }
 }
 
 .hero-text {
@@ -261,7 +347,7 @@ const features = [
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 14px;
+  gap: 16px;
 }
 
 .hero-eyebrow {
@@ -270,16 +356,15 @@ const features = [
   letter-spacing: 0.22em;
   text-transform: uppercase;
   color: var(--orange);
-  opacity: 0.7;
 }
 
 .hero-title {
   font-family: var(--font-serif), serif;
-  font-size: clamp(3rem, 8vw, 5.5rem);
+  font-size: clamp(3rem, 10vw, 5rem);
   font-weight: 800;
   line-height: 1;
   margin: 0;
-  letter-spacing: -0.01em;
+  letter-spacing: -0.02em;
 }
 
 .title-word {
@@ -288,24 +373,348 @@ const features = [
 
 .title-accent {
   color: var(--orange);
-  text-shadow: 0 0 60px rgba(240, 118, 12, 0.35);
 }
 
 .hero-subtitle {
   font-family: var(--font-sans), sans-serif;
-  font-size: 14px;
+  font-size: 15px;
   line-height: 1.75;
-  color: #9a6a55;
-  max-width: 480px;
+  color: var(--text-muted);
+  max-width: 520px;
   margin: 0;
   text-align: center;
 }
 
+/* ── Quick Actions ── */
+.quick-actions-row {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 16px;
+  width: 100%;
+  max-width: 860px;
+  margin-bottom: 32px;
+  z-index: 1;
+}
+
+@media (max-width: 600px) {
+  .quick-actions-row {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+.action-card {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  padding: 16px;
+  background: var(--assistant-bubble-bg);
+  border: 1px solid var(--assistant-bubble-border);
+  border-radius: 12px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.action-card:hover {
+  border-color: var(--orange);
+  background: var(--sidebar-tab-hover-bg);
+}
+
+.action-icon {
+  font-family: var(--font-mono), monospace;
+  color: var(--orange);
+  font-size: 20px;
+}
+
+.action-label {
+  font-family: var(--font-mono), monospace;
+  font-size: 10px;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--beige);
+}
+
+/* ── Status Bar ── */
+.status-bar {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-top: 32px;
+  padding: 8px 18px;
+  background: var(--model-selector-bg);
+  border: 1px solid var(--model-selector-border);
+  border-radius: 99px;
+  transition: all 0.3s ease;
+}
+
+.status-bar.error {
+  border-color: var(--status-error-color);
+  background: rgba(176, 64, 48, 0.05);
+}
+
+.status-indicator {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--model-dot-inactive);
+}
+
+.status-indicator.active {
+  background: var(--accent-green);
+}
+
+.status-indicator.loading {
+  background: var(--status-loading-color);
+  animation: pulse 1.5s infinite;
+}
+
+@keyframes pulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.4; }
+}
+
+.status-text {
+  font-family: var(--font-mono), monospace;
+  font-size: 10px;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--status-muted-color);
+}
+
+.refresh-btn {
+  background: transparent;
+  border: none;
+  color: var(--orange);
+  font-family: var(--font-mono), monospace;
+  font-size: 10px;
+  text-transform: uppercase;
+  cursor: pointer;
+  padding: 0;
+  text-decoration: underline;
+}
+
+/* ── Dashboard Grid ── */
+.dashboard-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 16px;
+  width: 100%;
+  max-width: 860px;
+  margin-bottom: 48px;
+  z-index: 1;
+}
+
+@media (max-width: 700px) {
+  .dashboard-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+.widget {
+  background: var(--assistant-bubble-bg);
+  border: 1px solid var(--assistant-bubble-border);
+  border-radius: 12px;
+  padding: 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  min-height: 200px;
+}
+
+.widget-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.widget-label {
+  font-family: var(--font-mono), monospace;
+  font-size: 10px;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  color: var(--status-muted-color);
+}
+
+.widget-link {
+  font-family: var(--font-mono), monospace;
+  font-size: 10px;
+  color: var(--orange);
+  text-decoration: none;
+}
+
+.widget-link:hover {
+  text-decoration: underline;
+}
+
+.widget-content {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+/* Event items */
+.event-item {
+  display: flex;
+  gap: 12px;
+  align-items: center;
+  padding: 8px 12px;
+  background: var(--surface-2);
+  border-radius: 8px;
+  border-left: 3px solid var(--orange);
+}
+
+.event-item.focus {
+  border-left-color: var(--accent-blue);
+}
+.event-item.goal {
+  border-left-color: var(--accent-green);
+}
+
+.event-time {
+  font-family: var(--font-mono), monospace;
+  font-size: 11px;
+  color: var(--text-muted);
+  white-space: nowrap;
+}
+
+.event-title {
+  font-size: 13px;
+  color: var(--beige);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* Goal items */
+.goal-item {
+  display: flex;
+  gap: 10px;
+  align-items: center;
+  padding: 8px 12px;
+  background: var(--surface-2);
+  border-radius: 8px;
+}
+
+.goal-priority {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+.goal-priority.high {
+  background: var(--status-error-color);
+}
+.goal-priority.medium {
+  background: var(--orange);
+}
+.goal-priority.low {
+  background: var(--status-muted-color);
+}
+
+.goal-title {
+  flex: 1;
+  font-size: 13px;
+  color: var(--beige);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.goal-meta {
+  font-family: var(--font-mono), monospace;
+  font-size: 10px;
+  color: var(--text-muted);
+}
+
+/* Note items */
+.note-widget-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 8px 12px;
+  background: var(--surface-2);
+  border-radius: 8px;
+  cursor: pointer;
+  transition: background 0.2s ease;
+}
+
+.note-widget-item:hover {
+  background: var(--surface-3);
+}
+
+.note-widget-title {
+  font-size: 13px;
+  color: var(--beige);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  flex: 1;
+  margin-right: 12px;
+}
+
+.note-widget-date {
+  font-family: var(--font-mono), monospace;
+  font-size: 10px;
+  color: var(--text-muted);
+}
+
+/* Activity items */
+.activity-item {
+  display: flex;
+  gap: 12px;
+  align-items: center;
+  padding: 8px 12px;
+  background: var(--surface-2);
+  border-radius: 8px;
+  cursor: pointer;
+  transition: background 0.2s ease;
+}
+
+.activity-item:hover {
+  background: var(--surface-3);
+}
+
+.activity-accent {
+  width: 3px;
+  height: 24px;
+  border-radius: 2px;
+}
+
+.activity-body {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+
+.activity-title {
+  font-size: 13px;
+  color: var(--beige);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.activity-meta {
+  font-family: var(--font-mono), monospace;
+  font-size: 10px;
+  color: var(--text-muted);
+  text-transform: uppercase;
+}
+
+.empty-hint {
+  font-size: 13px;
+  color: var(--text-muted);
+  font-style: italic;
+  text-align: center;
+  margin: 12px 0;
+}
+
+/* ── Hero Divider ── */
 .hero-divider {
   display: flex;
   align-items: center;
-  gap: 16px;
-  margin-top: 52px;
+  gap: 20px;
+  margin-top: 24px;
   width: 100%;
   max-width: 520px;
 }
@@ -313,7 +722,7 @@ const features = [
 .divider-line {
   flex: 1;
   height: 1px;
-  background: linear-gradient(90deg, transparent, #3d1010, transparent);
+  background: var(--sidebar-divider);
 }
 
 .divider-label {
@@ -321,7 +730,7 @@ const features = [
   font-size: 10px;
   letter-spacing: 0.18em;
   text-transform: uppercase;
-  color: #5a2a20;
+  color: var(--status-muted-color);
   white-space: nowrap;
 }
 
@@ -334,6 +743,7 @@ const features = [
   gap: 16px;
   width: 100%;
   max-width: 860px;
+  margin-top: 32px;
 }
 
 @media (max-width: 680px) {
@@ -344,19 +754,18 @@ const features = [
 
 .feature-card {
   position: relative;
-  background: #110000;
-  border: 1px solid #2e1010;
-  border-radius: 10px;
-  padding: 24px;
+  background: var(--assistant-bubble-bg);
+  border: 1px solid var(--assistant-bubble-border);
+  border-radius: 12px;
+  padding: 28px;
   cursor: pointer;
   display: flex;
   flex-direction: column;
-  gap: 16px;
+  gap: 20px;
   overflow: hidden;
   transition:
-    border-color 0.2s ease,
-    transform 0.2s ease,
-    box-shadow 0.2s ease;
+    border-color 0.25s ease,
+    transform 0.2s ease;
   animation: card-in 0.4s ease both;
   animation-delay: var(--delay);
 }
@@ -364,7 +773,7 @@ const features = [
 @keyframes card-in {
   from {
     opacity: 0;
-    transform: translateY(16px);
+    transform: translateY(12px);
   }
   to {
     opacity: 1;
@@ -374,122 +783,58 @@ const features = [
 
 .feature-card:not(.soon):hover {
   border-color: var(--accent);
-  transform: translateY(-3px);
-  box-shadow:
-    0 12px 40px rgba(0, 0, 0, 0.4),
-    0 0 0 1px var(--accent);
-}
-
-.feature-card:not(.soon):hover .card-glow {
-  opacity: 1;
-}
-
-.feature-card:not(.soon):hover .card-cta {
-  color: var(--beige);
-  gap: 10px;
+  background: var(--sidebar-tab-hover-bg);
 }
 
 .feature-card.soon {
-  opacity: 0.45;
+  opacity: 0.5;
   cursor: default;
-}
-
-/* Corner decorations */
-.card-corner {
-  position: absolute;
-  width: 10px;
-  height: 10px;
-  border-color: #3d1010;
-  border-style: solid;
-}
-.card-corner-tl {
-  top: 8px;
-  left: 8px;
-  border-width: 1px 0 0 1px;
-}
-.card-corner-br {
-  bottom: 8px;
-  right: 8px;
-  border-width: 0 1px 1px 0;
-}
-
-.feature-card:not(.soon):hover .card-corner {
-  border-color: var(--accent);
-  opacity: 0.6;
-}
-
-/* Card glow */
-.card-glow {
-  position: absolute;
-  inset: 0;
-  background: radial-gradient(
-    ellipse at 50% 0%,
-    rgba(var(--glow-rgb, 240, 118, 12), 0.06) 0%,
-    transparent 60%
-  );
-  opacity: 0;
-  transition: opacity 0.3s ease;
-  pointer-events: none;
-}
-
-.feature-card[style*='#f0760c'] {
-  --glow-rgb: 240, 118, 12;
-}
-.feature-card[style*='#c84a30'] {
-  --glow-rgb: 200, 74, 48;
-}
-.feature-card[style*='#870400'] {
-  --glow-rgb: 135, 4, 0;
 }
 
 /* Icon */
 .card-icon-wrap {
-  width: 38px;
-  height: 38px;
-  background: rgba(135, 4, 0, 0.15);
-  border: 1px solid #3a1010;
-  border-radius: 8px;
+  width: 44px;
+  height: 44px;
+  background: var(--surface-2);
+  border: 1px solid var(--assistant-bubble-border);
+  border-radius: 10px;
   display: flex;
   align-items: center;
   justify-content: center;
   color: var(--accent);
   flex-shrink: 0;
-  transition:
-    background 0.2s,
-    border-color 0.2s;
+  transition: all 0.25s;
 }
 
 .feature-card:not(.soon):hover .card-icon-wrap {
-  background: rgba(135, 4, 0, 0.25);
   border-color: var(--accent);
+  background: var(--surface-1);
 }
 
 .card-icon {
-  width: 18px;
-  height: 18px;
+  width: 20px;
+  height: 20px;
   display: flex;
   align-items: center;
   justify-content: center;
 }
 .card-icon :deep(svg) {
-  width: 18px;
-  height: 18px;
+  width: 20px;
+  height: 20px;
 }
 
 /* Body */
 .card-body {
   display: flex;
   flex-direction: column;
-  gap: 5px;
+  gap: 6px;
   flex: 1;
 }
 
 .card-label {
   font-family: var(--font-sans), sans-serif;
-  font-size: 15px;
+  font-size: 16px;
   font-weight: 700;
-  letter-spacing: 0.06em;
-  text-transform: uppercase;
   color: var(--beige);
 }
 
@@ -498,42 +843,44 @@ const features = [
   font-size: 11px;
   color: var(--accent);
   letter-spacing: 0.08em;
+  text-transform: uppercase;
 }
 
 .card-desc {
   font-family: var(--font-sans), sans-serif;
-  font-size: 12px;
+  font-size: 13px;
   line-height: 1.7;
-  color: #7a5040;
-  margin: 8px 0 0;
+  color: var(--text-muted);
+  margin: 10px 0 0;
 }
 
 /* Footer */
 .card-footer {
-  padding-top: 12px;
-  border-top: 1px solid #1e0808;
+  padding-top: 16px;
+  border-top: 1px solid var(--chat-input-border);
 }
 
 .card-cta {
   display: inline-flex;
   align-items: center;
-  gap: 6px;
+  gap: 8px;
   font-family: var(--font-mono), monospace;
   font-size: 11px;
   letter-spacing: 0.1em;
   text-transform: uppercase;
-  color: #6a3a28;
-  transition:
-    color 0.2s,
-    gap 0.2s;
+  color: var(--status-muted-color);
+  transition: all 0.25s;
 }
 .card-cta svg {
-  width: 12px;
-  height: 12px;
-  transition: transform 0.2s;
+  width: 14px;
+  height: 14px;
+  transition: transform 0.25s;
+}
+.feature-card:not(.soon):hover .card-cta {
+  color: var(--orange);
 }
 .feature-card:not(.soon):hover .card-cta svg {
-  transform: translateX(3px);
+  transform: translateX(4px);
 }
 
 .card-soon {
@@ -541,11 +888,11 @@ const features = [
   font-size: 10px;
   letter-spacing: 0.14em;
   text-transform: uppercase;
-  color: #4a2a1a;
-  background: rgba(80, 0, 1, 0.2);
-  border: 1px solid #3a1010;
-  padding: 3px 8px;
-  border-radius: 20px;
+  color: var(--status-muted-color);
+  background: var(--surface-2);
+  border: 1px solid var(--assistant-bubble-border);
+  padding: 4px 10px;
+  border-radius: 999px;
   display: inline-block;
 }
 
@@ -553,14 +900,14 @@ const features = [
 .home-footer {
   position: relative;
   z-index: 1;
-  margin-top: 48px;
+  margin-top: 64px;
 }
 
 .footer-tag {
   font-family: var(--font-mono), monospace;
   font-size: 10px;
   letter-spacing: 0.14em;
-  color: #3a1a10;
+  color: var(--status-muted-color);
   text-transform: uppercase;
 }
 </style>

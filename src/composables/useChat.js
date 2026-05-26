@@ -1,8 +1,23 @@
 import { ref, reactive, computed, watch } from 'vue'
-import { ollamaHost } from './useSettings.js'
+import { ollamaHost, systemPrompts } from './useSettings.js'
+import { useNotes } from './useNotes.js'
 
+const { notes } = useNotes()
 
-// ── Shared model state ────────────────────────────────────────────────────
+function getRelevantContext(content) {
+  if (!content || !notes.value.length) return ''
+  const words = content.toLowerCase().split(/\s+/).filter(w => w.length > 3)
+  const relevant = notes.value.filter(n => {
+    const text = (n.title + ' ' + n.content).toLowerCase()
+    return words.some(w => text.includes(w))
+  }).slice(0, 3)
+
+  if (!relevant.length) return ''
+  
+  return `\n\nRelevant information from the user's personal knowledge base:\n${relevant.map(n => `--- NOTE: ${n.title} ---\n${n.content}`).join('\n\n')}`
+}
+
+// ── Shared model state ─────────────────────────────────────────────────────
 const importedModels = ref([])
 const activeModel = ref(null)
 const modelsLoading = ref(false)
@@ -33,7 +48,6 @@ async function fetchModels() {
     if (!res.ok) throw new Error(`Ollama responded with ${res.status}`)
     const data = await res.json()
     importedModels.value = (data.models ?? []).map((m) => m.name)
-
     loadActiveModel()
     if (!activeModel.value || !importedModels.value.includes(activeModel.value)) {
       activeModel.value = importedModels.value[0] ?? null
@@ -51,11 +65,12 @@ async function fetchModels() {
 
 fetchModels()
 
-// ── Per-tab state factory ─────────────────────────────────────────────────
+// ── Per-tab state factory ──────────────────────────────────────────────────
 function createTabState(tab) {
   const storageKey = `sagittarius:chats:${tab}`
   const chats = ref([])
   const activeChatId = ref(null)
+  const activeAbortController = ref(null)
 
   function load() {
     try {
@@ -78,27 +93,33 @@ function createTabState(tab) {
   load()
   watch([chats, activeChatId], save, { deep: true })
 
-  return { chats, activeChatId }
+  return { chats, activeChatId, activeAbortController }
 }
 
 const tabStates = {
   code: createTabState('code'),
   mail: createTabState('mail'),
+  calendar: createTabState('calendar'),
+  notes: createTabState('notes'),
 }
 
 let nextId = Date.now()
 
-// ── Ollama streaming chat ─────────────────────────────────────────────────
-async function streamChat(model, messages, onChunk, onDone, onError) {
+// ── Ollama streaming chat ──────────────────────────────────────────────────
+async function streamChat(model, messages, systemPrompt, signal, onChunk, onDone, onError) {
   try {
+    const apiMessages = systemPrompt
+      ? [
+          { role: 'system', content: systemPrompt },
+          ...messages.map((m) => ({ role: m.role, content: m.content })),
+        ]
+      : messages.map((m) => ({ role: m.role, content: m.content }))
+
     const res = await fetch(`${ollamaHost.value}/api/chat`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        model,
-        messages: messages.map((m) => ({ role: m.role, content: m.content })),
-        stream: true,
-      }),
+      body: JSON.stringify({ model, messages: apiMessages, stream: true }),
+      signal,
     })
 
     if (!res.ok) {
@@ -128,6 +149,11 @@ async function streamChat(model, messages, onChunk, onDone, onError) {
       }
     }
   } catch (err) {
+    if (err.name === 'AbortError') {
+      // User stopped — keep whatever partial content was received
+      onDone()
+      return
+    }
     onError(
       err.message.includes('fetch') || err.message.includes('NetworkError')
         ? 'Cannot reach Ollama. Is it still running?'
@@ -136,9 +162,10 @@ async function streamChat(model, messages, onChunk, onDone, onError) {
   }
 }
 
-// ── Public composable ─────────────────────────────────────────────────────
+// ── Public composable ──────────────────────────────────────────────────────
 export function useChat(tab) {
-  const { chats, activeChatId } = tabStates[tab]
+  const { chats, activeChatId, activeAbortController } = tabStates[tab]
+  const systemPrompt = computed(() => systemPrompts.value[tab] ?? null)
 
   const activeChat = computed(
     () => chats.value.find((c) => c.id === activeChatId.value) ?? null,
@@ -168,8 +195,22 @@ export function useChat(tab) {
     }
   }
 
-  async function sendMessage(chat, content) {
-    chat.messages.push({ role: 'user', content: content.trim(), ts: Date.now() })
+  function renameChat(id, newTitle) {
+    const chat = chats.value.find((c) => c.id === id)
+    if (chat && newTitle.trim()) chat.title = newTitle.trim()
+  }
+
+  function stopGeneration() {
+    if (activeAbortController.value) {
+      activeAbortController.value.abort()
+      activeAbortController.value = null
+    }
+  }
+
+  async function sendMessage(chat, content, skipUserMessage = false) {
+    if (!skipUserMessage) {
+      chat.messages.push({ role: 'user', content: content.trim(), ts: Date.now() })
+    }
 
     const assistantMsg = reactive({
       role: 'assistant',
@@ -180,27 +221,59 @@ export function useChat(tab) {
     })
     chat.messages.push(assistantMsg)
 
+    const controller = new AbortController()
+    activeAbortController.value = controller
+
+    const context = getRelevantContext(content)
+    const effectiveSystemPrompt = systemPrompt.value ? (systemPrompt.value + context) : (context || null)
+
     await streamChat(
       chat.model,
       chat.messages.slice(0, -1),
-      (token) => { assistantMsg.content += token },
-      () => { assistantMsg.streaming = false },
+      effectiveSystemPrompt,
+      controller.signal,
+      (token) => {
+        assistantMsg.content += token
+      },
+      () => {
+        assistantMsg.streaming = false
+        activeAbortController.value = null
+      },
       (err) => {
         assistantMsg.content = ''
         assistantMsg.error = err
         assistantMsg.streaming = false
+        activeAbortController.value = null
       },
     )
   }
 
-  async function submitPrompt(content) {
-    let chat = activeChat.value
+  async function regenerateLastMessage() {
+    const chat = activeChat.value
+    if (!chat || chat.messages.length < 2) return
+    const msgs = chat.messages
+    // Remove the last assistant message
+    if (msgs[msgs.length - 1]?.role === 'assistant') {
+      msgs.splice(msgs.length - 1, 1)
+    }
+    // Find the last user message for context — it stays in the array
+    const lastUser = [...msgs].reverse().find((m) => m.role === 'user')
+    if (!lastUser) return
+    // Re-stream without re-appending the user message
+    await sendMessage(chat, lastUser.content, true)
+  }
 
+  async function submitPrompt(payload) {
+    const isObject = typeof payload === 'object' && payload !== null
+    const content = isObject ? payload.text : payload
+    const files = isObject ? payload.files : []
+
+    let chat = activeChat.value
     if (!chat) {
       const id = nextId++
       chat = {
         id,
-        title: content.trim().slice(0, 40) || 'New chat',
+        title: content.trim().slice(0, 40) || (files.length ? `Chat with ${files.length} files` : 'New chat'),
         model: activeModel.value,
         messages: [],
       }
@@ -208,7 +281,30 @@ export function useChat(tab) {
       activeChatId.value = id
     }
 
-    await sendMessage(chat, content)
+    if (files && files.length > 0) {
+      let fullContent = content
+      for (const file of files) {
+        try {
+          const text = await readFileAsText(file)
+          fullContent += `\n\n--- FILE: ${file.name} ---\n${text}`
+        } catch (err) {
+          console.error(`Failed to read file ${file.name}:`, err)
+          fullContent += `\n\n[Error reading file ${file.name}]`
+        }
+      }
+      await sendMessage(chat, fullContent)
+    } else {
+      await sendMessage(chat, content)
+    }
+  }
+
+  function readFileAsText(file) {
+    return new Promise((resolve, reject) => {
+      const reader = new FileReader()
+      reader.onload = () => resolve(reader.result)
+      reader.onerror = reject
+      reader.readAsText(file)
+    })
   }
 
   return {
@@ -225,6 +321,9 @@ export function useChat(tab) {
     selectChat,
     newChat,
     deleteChat,
+    renameChat,
+    stopGeneration,
+    regenerateLastMessage,
     submitPrompt,
   }
 }

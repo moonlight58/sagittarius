@@ -2,6 +2,7 @@
 import { ref, computed } from 'vue'
 import { useRoute } from 'vue-router'
 import { useChat } from '../composables/useChat.js'
+import { useTheme } from '../composables/useTheme.js'
 
 const props = defineProps({
   activeTab: { type: String, default: 'code' },
@@ -10,6 +11,7 @@ const emit = defineEmits(['update:activeTab'])
 
 const route = useRoute()
 const collapsed = ref(false)
+const { theme, toggle: toggleTheme } = useTheme()
 
 const codeChat = useChat('code')
 const mailChat = useChat('mail')
@@ -43,15 +45,19 @@ function setTab(id) {
 }
 
 const tabs = [
+  { id: 'home', label: 'Home', path: '/' },
   { id: 'code', label: 'Code', path: '/code' },
   { id: 'mail', label: 'Mail', path: '/mail' },
   { id: 'calendar', label: 'Calendar', path: '/calendar' },
+  { id: 'notes', label: 'Notes', path: '/notes' },
 ]
 
 const tabIcons = {
+  home: `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="m3 9 9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>`,
   code: `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><polyline points="16 18 22 12 16 6"/><polyline points="8 6 2 12 8 18"/></svg>`,
   mail: `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="4" width="20" height="16" rx="2"/><path d="m22 7-8.97 5.7a1.94 1.94 0 0 1-2.06 0L2 7"/></svg>`,
   calendar: `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>`,
+  notes: `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M14.5 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7.5L14.5 2z"/><polyline points="14 2 14 8 20 8"/></svg>`,
 }
 </script>
 
@@ -158,25 +164,79 @@ const tabIcons = {
     <!-- Spacer -->
     <div class="sidebar-space" />
 
-    <!-- Collapse toggle -->
-    <button
-      class="collapse-toggle"
-      @click="collapsed = !collapsed"
-      :title="collapsed ? 'Expand' : 'Collapse'"
-    >
-      <svg
-        xmlns="http://www.w3.org/2000/svg"
-        viewBox="0 0 24 24"
-        fill="none"
-        stroke="currentColor"
-        stroke-width="2"
-        stroke-linecap="round"
-        stroke-linejoin="round"
-        :style="{ transform: collapsed ? 'rotate(180deg)' : 'rotate(0deg)' }"
+    <!-- Bottom controls -->
+    <div class="sidebar-bottom">
+      <!-- Theme toggle -->
+      <button
+        class="theme-toggle"
+        @click="toggleTheme"
+        :title="theme === 'dark' ? 'Switch to light' : 'Switch to dark'"
       >
-        <polyline points="15 18 9 12 15 6" />
-      </svg>
-    </button>
+        <!-- Sun icon (shown in dark mode → click to go light) -->
+        <Transition name="icon-swap" mode="out-in">
+          <svg
+            v-if="theme === 'dark'"
+            key="sun"
+            xmlns="http://www.w3.org/2000/svg"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            stroke-width="1.8"
+            stroke-linecap="round"
+            stroke-linejoin="round"
+          >
+            <circle cx="12" cy="12" r="5" />
+            <line x1="12" y1="1" x2="12" y2="3" />
+            <line x1="12" y1="21" x2="12" y2="23" />
+            <line x1="4.22" y1="4.22" x2="5.64" y2="5.64" />
+            <line x1="18.36" y1="18.36" x2="19.78" y2="19.78" />
+            <line x1="1" y1="12" x2="3" y2="12" />
+            <line x1="21" y1="12" x2="23" y2="12" />
+            <line x1="4.22" y1="19.78" x2="5.64" y2="18.36" />
+            <line x1="18.36" y1="5.64" x2="19.78" y2="4.22" />
+          </svg>
+          <!-- Moon icon (shown in light mode → click to go dark) -->
+          <svg
+            v-else
+            key="moon"
+            xmlns="http://www.w3.org/2000/svg"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            stroke-width="1.8"
+            stroke-linecap="round"
+            stroke-linejoin="round"
+          >
+            <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z" />
+          </svg>
+        </Transition>
+        <Transition name="label-fade">
+          <span v-if="!collapsed" class="theme-label">
+            {{ theme === 'dark' ? 'Light mode' : 'Dark mode' }}
+          </span>
+        </Transition>
+      </button>
+
+      <!-- Collapse toggle -->
+      <button
+        class="collapse-toggle"
+        @click="collapsed = !collapsed"
+        :title="collapsed ? 'Expand' : 'Collapse'"
+      >
+        <svg
+          xmlns="http://www.w3.org/2000/svg"
+          viewBox="0 0 24 24"
+          fill="none"
+          stroke="currentColor"
+          stroke-width="2"
+          stroke-linecap="round"
+          stroke-linejoin="round"
+          :style="{ transform: collapsed ? 'rotate(180deg)' : 'rotate(0deg)' }"
+        >
+          <polyline points="15 18 9 12 15 6" />
+        </svg>
+      </button>
+    </div>
   </aside>
 </template>
 
@@ -185,11 +245,14 @@ const tabIcons = {
   position: relative;
   display: flex;
   flex-direction: column;
-  width: 220px;
+  width: 236px;
   min-height: 100vh;
-  background-color: #110000;
-  border-right: 1px solid #3d1010;
-  transition: width 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  background: var(--sidebar-bg);
+  border-right: 1px solid var(--sidebar-border);
+  transition:
+    width 0.3s cubic-bezier(0.4, 0, 0.2, 1),
+    background-color 0.25s ease,
+    border-color 0.25s ease;
   overflow: visible;
   font-family: var(--font-mono), sans-serif;
 }
@@ -202,19 +265,19 @@ const tabIcons = {
   display: flex;
   align-items: center;
   gap: 10px;
-  padding: 16px 14px;
-  border-bottom: 1px solid #2e1010;
+  padding: 18px 16px;
+  border-bottom: 1px solid var(--sidebar-logo-border);
   overflow: hidden;
   min-height: 56px;
   flex-shrink: 0;
+  transition: border-color 0.25s ease;
 }
 
 .logo-icon {
-  width: 26px;
-  height: 26px;
+  width: 28px;
+  height: 28px;
   flex-shrink: 0;
   color: var(--orange);
-  filter: drop-shadow(0 0 5px rgba(240, 118, 12, 0.4));
 }
 .logo-icon svg {
   width: 100%;
@@ -224,17 +287,18 @@ const tabIcons = {
 .logo-name {
   font-family: var(--font-serif), sans-serif;
   font-weight: 800;
-  font-size: 0.95rem;
-  letter-spacing: 0.12em;
+  font-size: 1rem;
+  letter-spacing: 0.08em;
   color: var(--beige);
   white-space: nowrap;
+  transition: color 0.25s ease;
 }
 
 .sidebar-nav {
   display: flex;
   flex-direction: column;
   gap: 2px;
-  padding: 10px 8px;
+  padding: 12px 10px;
   flex-shrink: 0;
 }
 
@@ -243,15 +307,15 @@ const tabIcons = {
   display: flex;
   align-items: center;
   gap: 10px;
-  padding: 9px 10px;
-  border: none;
+  padding: 10px 11px;
+  border: 1px solid transparent;
   background: transparent;
   border-radius: 6px;
   cursor: pointer;
   transition:
-    background 0.15s ease,
-    color 0.15s ease;
-  color: #9a5040;
+    background 0.25s ease,
+    color 0.25s ease;
+  color: var(--sidebar-tab-color);
   overflow: hidden;
   width: 100%;
   text-align: left;
@@ -259,11 +323,11 @@ const tabIcons = {
 }
 
 .tab-btn:hover {
-  background: rgba(135, 4, 0, 0.15);
+  background: var(--sidebar-tab-hover-bg);
   color: var(--beige);
 }
 .tab-btn.active {
-  background: rgba(135, 4, 0, 0.25);
+  background: var(--sidebar-tab-active-bg);
   color: var(--orange);
 }
 
@@ -282,29 +346,29 @@ const tabIcons = {
 
 .tab-label {
   font-family: var(--font-sans), sans-serif;
-  font-size: 12px;
+  font-size: 12.5px;
   font-weight: 600;
-  letter-spacing: 0.08em;
+  letter-spacing: 0.03em;
   white-space: nowrap;
 }
 
 .active-pip {
   position: absolute;
-  right: 0;
+  right: 6px;
   top: 50%;
   transform: translateY(-50%);
-  width: 3px;
-  height: 55%;
+  width: 4px;
+  height: 4px;
   background: var(--orange);
-  border-radius: 2px 0 0 2px;
-  box-shadow: 0 0 8px rgba(240, 118, 12, 0.6);
+  border-radius: 999px;
 }
 
 .sidebar-divider {
-  margin: 2px 14px 0;
+  margin: 12px 14px;
   height: 1px;
-  background: linear-gradient(90deg, transparent, #6b2a2a, transparent);
+  background: var(--sidebar-divider);
   flex-shrink: 0;
+  transition: background 0.25s ease;
 }
 
 /* History section */
@@ -322,21 +386,20 @@ const tabIcons = {
   align-items: center;
   gap: 8px;
   width: 100%;
-  padding: 7px 10px;
-  background: transparent;
-  border: 1px dashed #3a1a1a;
+  padding: 8px 10px;
+  background: var(--model-selector-bg);
+  border: 1px solid var(--sidebar-new-chat-border);
   border-radius: 6px;
-  color: #7a4030;
+  color: var(--sidebar-new-chat-color);
   font-family: var(--font-sans), sans-serif;
   font-size: 11px;
   font-weight: 600;
-  letter-spacing: 0.07em;
-  text-transform: uppercase;
+  letter-spacing: 0.03em;
   cursor: pointer;
   transition:
-    border-color 0.15s,
-    color 0.15s,
-    background 0.15s;
+    border-color 0.25s,
+    color 0.25s,
+    background 0.25s;
   flex-shrink: 0;
   margin-bottom: 6px;
 }
@@ -348,9 +411,9 @@ const tabIcons = {
 }
 
 .new-chat-btn:hover {
-  border-color: #7a2a2a;
+  border-color: var(--orange);
   color: var(--beige);
-  background: rgba(135, 4, 0, 0.08);
+  background: var(--sidebar-tab-hover-bg);
 }
 
 /* Chat list */
@@ -361,14 +424,14 @@ const tabIcons = {
   overflow-y: auto;
   max-height: 38vh;
   scrollbar-width: thin;
-  scrollbar-color: #2a0a0a transparent;
+  scrollbar-color: var(--sidebar-border) transparent;
 }
 
 .chat-history::-webkit-scrollbar {
   width: 3px;
 }
 .chat-history::-webkit-scrollbar-thumb {
-  background: #2a0a0a;
+  background: var(--sidebar-border);
   border-radius: 2px;
 }
 
@@ -377,22 +440,23 @@ const tabIcons = {
   align-items: center;
   justify-content: space-between;
   gap: 6px;
-  padding: 6px 6px 6px 10px;
-  border-radius: 5px;
+  padding: 7px 7px 7px 10px;
+  border: 1px solid transparent;
+  border-radius: 6px;
   cursor: pointer;
   transition:
-    background 0.12s,
-    color 0.12s;
-  color: #7a4535;
+    background 0.25s ease,
+    color 0.25s ease;
+  color: var(--history-item-color);
   min-width: 0;
 }
 
 .history-item:hover {
-  background: rgba(135, 4, 0, 0.1);
-  color: #c9856a;
+  background: var(--history-item-hover-bg);
+  color: var(--sidebar-tab-color);
 }
 .history-item.active {
-  background: rgba(135, 4, 0, 0.18);
+  background: var(--history-item-active-bg);
   color: var(--beige);
 }
 
@@ -415,14 +479,14 @@ const tabIcons = {
   justify-content: center;
   background: transparent;
   border: none;
-  color: #5a2020;
+  color: var(--history-delete-color);
   border-radius: 3px;
   cursor: pointer;
   opacity: 0;
   transition:
-    opacity 0.12s,
-    color 0.12s,
-    background 0.12s;
+    opacity 0.25s ease,
+    color 0.25s ease,
+    background 0.25s ease;
   padding: 0;
 }
 
@@ -431,7 +495,7 @@ const tabIcons = {
 }
 .history-delete:hover {
   color: #e05040;
-  background: rgba(200, 50, 30, 0.12);
+  background: rgba(200, 50, 30, 0.08);
 }
 .history-delete svg {
   width: 12px;
@@ -442,33 +506,89 @@ const tabIcons = {
   flex: 1;
 }
 
+/* Bottom controls row */
+.sidebar-bottom {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 10px 10px 14px;
+  gap: 6px;
+  border-top: 1px solid var(--sidebar-logo-border);
+  transition: border-color 0.25s ease;
+}
+
+.collapsed .sidebar-bottom {
+  flex-direction: column;
+  justify-content: center;
+}
+
+/* Theme toggle */
+.theme-toggle {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex: 1;
+  min-width: 0;
+  padding: 7px 8px;
+  background: transparent;
+  border: none;
+  border-radius: 6px;
+  color: var(--sidebar-tab-color);
+  cursor: pointer;
+  transition:
+    background 0.25s ease,
+    color 0.25s ease;
+}
+
+.collapsed .theme-toggle {
+  flex: 0 0 auto;
+  padding: 6px;
+  justify-content: center;
+}
+
+.theme-toggle:hover {
+  background: var(--sidebar-tab-hover-bg);
+  color: var(--orange);
+}
+
+.theme-toggle svg {
+  width: 16px;
+  height: 16px;
+  flex-shrink: 0;
+}
+
+.theme-label {
+  font-family: var(--font-sans), sans-serif;
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.03em;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* Collapse toggle */
 .collapse-toggle {
-  position: absolute;
-  right: -13px;
-  top: 50%;
-  transform: translateY(-50%);
-  width: 26px;
-  height: 26px;
-  background: #1f0000;
-  border: 1px solid #4a1a1a;
-  border-radius: 50%;
+  width: 28px;
+  height: 28px;
+  flex-shrink: 0;
+  background: var(--sidebar-collapse-bg);
+  border: 1px solid var(--sidebar-collapse-border);
+  border-radius: 7px;
   display: flex;
   align-items: center;
   justify-content: center;
   cursor: pointer;
-  color: #9a5040;
+  color: var(--sidebar-tab-color);
   transition:
-    color 0.15s,
-    background 0.15s,
-    box-shadow 0.15s;
-  z-index: 10;
+    color 0.25s ease,
+    background 0.25s ease,
+    border-color 0.25s ease;
   padding: 0;
 }
 
 .collapse-toggle:hover {
   color: var(--orange);
-  background: #2e0000;
-  box-shadow: 0 0 10px rgba(240, 118, 12, 0.3);
 }
 
 .collapse-toggle svg {
@@ -477,11 +597,12 @@ const tabIcons = {
   transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
+/* Transitions */
 .label-fade-enter-active,
 .label-fade-leave-active {
   transition:
-    opacity 0.2s ease,
-    transform 0.2s ease;
+    opacity 0.25s ease,
+    transform 0.25s ease;
 }
 .label-fade-enter-from,
 .label-fade-leave-to {
@@ -491,10 +612,23 @@ const tabIcons = {
 
 .history-fade-enter-active,
 .history-fade-leave-active {
-  transition: opacity 0.2s ease;
+  transition: opacity 0.25s ease;
 }
 .history-fade-enter-from,
 .history-fade-leave-to {
   opacity: 0;
+}
+
+.icon-swap-enter-active,
+.icon-swap-leave-active {
+  transition: opacity 0.25s ease, transform 0.25s ease;
+}
+.icon-swap-enter-from {
+  opacity: 0;
+  transform: rotate(-30deg) scale(0.8);
+}
+.icon-swap-leave-to {
+  opacity: 0;
+  transform: rotate(30deg) scale(0.8);
 }
 </style>

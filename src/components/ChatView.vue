@@ -12,7 +12,6 @@ const emit = defineEmits(['submit'])
 
 const messagesRef = ref(null)
 
-// Configure marked with highlight.js
 marked.setOptions({
   highlight(code, lang) {
     if (lang && hljs.getLanguage(lang)) {
@@ -29,13 +28,11 @@ function renderMarkdown(content) {
   return marked.parse(content)
 }
 
-// Auto-scroll on new content
 watch(
   () => props.chat?.messages?.length,
   () => scrollToBottom(),
 )
 
-// Also scroll while streaming (content changes but length stays same)
 watch(
   () => {
     const msgs = props.chat?.messages
@@ -81,12 +78,10 @@ const isStreaming = computed(() => {
     <div ref="messagesRef" class="chat-messages">
       <div v-for="(msg, i) in chat.messages" :key="i" class="message" :class="msg.role">
         <div class="message-bubble">
-          <!-- User message — plain text -->
           <span v-if="msg.role === 'user'" class="message-content user-content">{{
             msg.content
           }}</span>
 
-          <!-- Assistant message — markdown or error -->
           <div v-else class="message-content assistant-content">
             <div v-if="msg.error" class="msg-error">
               <svg
@@ -136,9 +131,11 @@ const isStreaming = computed(() => {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 12px 24px;
-  border-bottom: 1px solid #2a0e0e;
+  padding: 16px 28px;
+  border-bottom: 1px solid var(--chat-header-border);
+  background: var(--color-bg);
   flex-shrink: 0;
+  transition: border-color 0.25s ease;
 }
 
 .chat-title {
@@ -146,11 +143,12 @@ const isStreaming = computed(() => {
   font-size: 13px;
   font-weight: 600;
   color: var(--beige);
-  letter-spacing: 0.04em;
+  letter-spacing: 0.01em;
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
   max-width: 50%;
+  transition: color 0.25s ease;
 }
 
 .chat-header-right {
@@ -163,10 +161,10 @@ const isStreaming = computed(() => {
   font-family: var(--font-mono), monospace;
   font-size: 11px;
   color: var(--orange);
-  background: rgba(240, 118, 12, 0.08);
-  border: 1px solid rgba(240, 118, 12, 0.2);
-  border-radius: 20px;
-  padding: 2px 10px;
+  background: var(--model-selector-bg);
+  border: 1px solid var(--model-selector-border);
+  border-radius: 999px;
+  padding: 3px 10px;
   white-space: nowrap;
 }
 
@@ -176,7 +174,7 @@ const isStreaming = computed(() => {
   gap: 6px;
   font-family: var(--font-mono), monospace;
   font-size: 10px;
-  color: #9a6040;
+  color: var(--sidebar-tab-color);
   letter-spacing: 0.08em;
 }
 
@@ -189,94 +187,76 @@ const isStreaming = computed(() => {
 }
 
 @keyframes pulse-dot {
-  0%,
-  100% {
-    opacity: 0.4;
-    transform: scale(0.8);
-  }
-  50% {
-    opacity: 1;
-    transform: scale(1.1);
-  }
+  0%, 100% { opacity: 0.4; transform: scale(0.8); }
+  50% { opacity: 1; transform: scale(1.1); }
 }
 
 /* Messages */
 .chat-messages {
   flex: 1;
   overflow-y: auto;
-  padding: 24px;
+  padding: 32px 28px;
   display: flex;
   flex-direction: column;
-  gap: 20px;
+  gap: 24px;
   scrollbar-width: thin;
-  scrollbar-color: #2a0a0a transparent;
+  scrollbar-color: var(--sidebar-border) transparent;
 }
 
-.chat-messages::-webkit-scrollbar {
-  width: 4px;
-}
+.chat-messages::-webkit-scrollbar { width: 4px; }
 .chat-messages::-webkit-scrollbar-thumb {
-  background: #2a0a0a;
+  background: var(--sidebar-border);
   border-radius: 2px;
 }
 
-.message {
-  display: flex;
-}
-.message.user {
-  justify-content: flex-end;
-}
-.message.assistant {
-  justify-content: flex-start;
-}
+.message { display: flex; }
+.message.user { justify-content: flex-end; }
+.message.assistant { justify-content: flex-start; }
 
 .message-bubble {
-  max-width: 78%;
+  max-width: min(82%, 880px);
   display: flex;
   flex-direction: column;
   gap: 4px;
 }
 
-.message.user .message-bubble {
-  align-items: flex-end;
-}
+.message.user .message-bubble { align-items: flex-end; }
 
 /* User bubble */
 .user-content {
   display: block;
-  padding: 10px 14px;
-  border-radius: 10px;
-  border-bottom-right-radius: 3px;
-  background: #2a0808;
-  border: 1px solid #4a1a1a;
-  color: var(--beige);
-  font-family: var(--font-mono), monospace;
-  font-size: 13px;
+  padding: 12px 16px;
+  border-radius: 12px;
+  border-bottom-right-radius: 4px;
+  background: var(--user-bubble-bg);
+  border: 1px solid var(--user-bubble-border);
+  color: var(--user-bubble-color);
+  font-family: var(--font-sans), sans-serif;
+  font-size: 14px;
   line-height: 1.6;
   white-space: pre-wrap;
   word-break: break-word;
+  transition: background 0.25s ease, border-color 0.25s ease, color 0.25s ease;
 }
 
 /* Assistant bubble */
 .assistant-content {
   position: relative;
-  padding: 12px 16px;
-  border-radius: 10px;
-  border-bottom-left-radius: 3px;
-  background: #160404;
-  border: 1px solid #2e1010;
-  color: #e0c8b0;
+  padding: 4px 0;
+  background: transparent;
+  color: var(--assistant-bubble-color);
   font-family: var(--font-sans), sans-serif;
-  font-size: 13.5px;
+  font-size: 15px;
   line-height: 1.75;
   word-break: break-word;
+  transition: color 0.25s ease;
 }
 
 /* Streaming cursor */
 .cursor-blink {
   display: inline-block;
   width: 2px;
-  height: 14px;
+  height: 15px;
   background: var(--orange);
   margin-left: 2px;
   vertical-align: middle;
@@ -285,13 +265,8 @@ const isStreaming = computed(() => {
 }
 
 @keyframes blink {
-  0%,
-  100% {
-    opacity: 1;
-  }
-  50% {
-    opacity: 0;
-  }
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0; }
 }
 
 /* Error */
@@ -299,174 +274,129 @@ const isStreaming = computed(() => {
   display: flex;
   align-items: flex-start;
   gap: 8px;
-  color: #e07060;
+  color: var(--status-error-color);
   font-family: var(--font-mono), monospace;
   font-size: 12px;
   line-height: 1.5;
+  background: rgba(176, 64, 48, 0.05);
+  padding: 12px 16px;
+  border-radius: 8px;
+  border: 1px solid rgba(176, 64, 48, 0.1);
 }
-.msg-error svg {
-  width: 14px;
-  height: 14px;
-  flex-shrink: 0;
-  margin-top: 1px;
-}
+.msg-error svg { width: 14px; height: 14px; flex-shrink: 0; margin-top: 1px; }
 
 /* Timestamp */
 .message-time {
   font-family: var(--font-mono), monospace;
   font-size: 10px;
-  color: #4a2020;
+  color: var(--status-muted-color);
   padding: 0 2px;
+  opacity: 0.6;
 }
 
 /* Input area */
 .chat-input-area {
   flex-shrink: 0;
-  padding: 16px 24px 20px;
-  border-top: 1px solid #1e0808;
+  padding: 24px 28px 32px;
+  background: var(--color-bg);
   display: flex;
   justify-content: center;
+  transition: background 0.25s ease;
 }
 </style>
 
-<!-- Markdown styles (unscoped so they apply inside v-html) -->
+<!-- Markdown styles (unscoped) -->
 <style>
 .markdown-body {
-  color: #e0c8b0;
+  color: var(--markdown-color);
 }
 
-.markdown-body p {
-  margin: 0 0 10px;
-}
-.markdown-body p:last-child {
-  margin-bottom: 0;
-}
+.markdown-body p { margin: 0 0 16px; }
+.markdown-body p:last-child { margin-bottom: 0; }
 
 .markdown-body h1,
 .markdown-body h2,
 .markdown-body h3,
 .markdown-body h4 {
   font-family: var(--font-serif), serif;
-  color: var(--beige);
-  margin: 18px 0 8px;
-  line-height: 1.3;
+  color: var(--markdown-h-color);
+  margin: 24px 0 12px;
+  line-height: 1.4;
 }
-.markdown-body h1 {
-  font-size: 1.3em;
-}
-.markdown-body h2 {
-  font-size: 1.15em;
-}
-.markdown-body h3 {
-  font-size: 1.05em;
-}
+.markdown-body h1 { font-size: 1.5em; }
+.markdown-body h2 { font-size: 1.3em; }
+.markdown-body h3 { font-size: 1.15em; }
 
-.markdown-body strong {
-  color: var(--beige);
-  font-weight: 700;
-}
-.markdown-body em {
-  color: #c9a88a;
-  font-style: italic;
-}
+.markdown-body strong { color: var(--markdown-h-color); font-weight: 700; }
+.markdown-body em { color: var(--markdown-em-color); font-style: italic; }
 
 .markdown-body ul,
-.markdown-body ol {
-  padding-left: 20px;
-  margin: 6px 0 10px;
-}
-.markdown-body li {
-  margin: 3px 0;
-}
+.markdown-body ol { padding-left: 24px; margin: 8px 0 16px; }
+.markdown-body li { margin: 6px 0; }
 
 .markdown-body a {
-  color: var(--orange);
+  color: var(--markdown-link-color);
   text-decoration: none;
-  border-bottom: 1px solid rgba(240, 118, 12, 0.3);
+  border-bottom: 1px solid rgba(201, 106, 42, 0.2);
 }
-.markdown-body a:hover {
-  border-color: var(--orange);
-}
+.markdown-body a:hover { border-color: var(--orange); }
 
 .markdown-body blockquote {
-  border-left: 3px solid #4a1a1a;
-  margin: 10px 0;
-  padding: 6px 14px;
-  color: #9a7060;
+  border-left: 3px solid var(--markdown-blockquote-border);
+  margin: 16px 0;
+  padding: 8px 18px;
+  color: var(--markdown-blockquote-color);
   font-style: italic;
 }
 
 .markdown-body hr {
   border: none;
-  border-top: 1px solid #2a1010;
-  margin: 14px 0;
+  border-top: 1px solid var(--markdown-hr-color);
+  margin: 20px 0;
 }
 
 /* Inline code */
 .markdown-body code:not(pre code) {
   font-family: var(--font-mono), monospace;
-  font-size: 12px;
-  background: #2a0a0a;
-  border: 1px solid #3a1a1a;
+  font-size: 12.5px;
+  background: var(--markdown-code-bg);
+  border: 1px solid var(--markdown-code-border);
   border-radius: 4px;
   padding: 1px 6px;
-  color: #f0a070;
+  color: var(--markdown-code-color);
 }
 
 /* Code blocks */
 .markdown-body pre {
-  background: #0e0000;
-  border: 1px solid #2e1010;
-  border-radius: 7px;
-  padding: 14px 16px;
+  background: var(--markdown-pre-bg);
+  border: 1px solid var(--markdown-pre-border);
+  border-radius: 8px;
+  padding: 16px 18px;
   overflow-x: auto;
-  margin: 10px 0;
+  margin: 16px 0;
   position: relative;
 }
 
 .markdown-body pre code {
   font-family: var(--font-mono), monospace;
-  font-size: 12.5px;
+  font-size: 13px;
   line-height: 1.65;
-  color: #d4b896;
+  color: var(--markdown-pre-color);
   background: transparent;
   border: none;
   padding: 0;
 }
 
-/* highlight.js token overrides to match the theme */
-.markdown-body .hljs-keyword {
-  color: #e05a3a;
-}
-.markdown-body .hljs-string {
-  color: #a8c070;
-}
-.markdown-body .hljs-comment {
-  color: #5a3a2a;
-  font-style: italic;
-}
-.markdown-body .hljs-number {
-  color: #c8a050;
-}
-.markdown-body .hljs-function {
-  color: #d4a070;
-}
-.markdown-body .hljs-title {
-  color: #f0a060;
-}
-.markdown-body .hljs-params {
-  color: #c0a080;
-}
-.markdown-body .hljs-built_in {
-  color: #d08050;
-}
-.markdown-body .hljs-type {
-  color: #b07050;
-}
-.markdown-body .hljs-attr {
-  color: #c8a050;
-}
-.markdown-body .hljs-variable {
-  color: #d4b896;
-}
+/* highlight.js tokens */
+.markdown-body .hljs-keyword { color: #e05a3a; }
+.markdown-body .hljs-string { color: #a8c070; }
+.markdown-body .hljs-comment { color: #8a7060; font-style: italic; }
+.markdown-body .hljs-number { color: #c8a050; }
+.markdown-body .hljs-function { color: #d4a070; }
+.markdown-body .hljs-title { color: #f0a060; }
+.markdown-body .hljs-params { color: #c0a080; }
+.markdown-body .hljs-built_in { color: #d08050; }
+.markdown-body .hljs-type { color: #b07050; }
+.markdown-body .hljs-attr { color: #c8a050; }
+.markdown-body .hljs-variable { color: var(--markdown-pre-color); }
 </style>
