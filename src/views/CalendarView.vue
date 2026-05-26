@@ -1,258 +1,868 @@
 <script setup>
-import { ref, onMounted } from 'vue'
+import { computed, reactive, ref, watch } from 'vue'
+import ViewTopbar from '../components/ViewTopbar.vue'
+import { useCalendar } from '../composables/useCalendar.js'
+import { useChat } from '../composables/useChat.js'
 
-const visible = ref(false)
-onMounted(() => setTimeout(() => { visible.value = true }, 80))
+const { activeModel } = useChat('calendar')
+const calendar = useCalendar()
+
+const selectedDate = ref(calendar.todayKey())
+const viewMode = ref('week')
+const assistantPrompt = ref('')
+const assistantMessage = ref('')
+const editingId = ref(null)
+
+const eventForm = reactive({
+  title: '',
+  date: selectedDate.value,
+  endDate: selectedDate.value,
+  start: '09:00',
+  end: '10:00',
+  type: 'event',
+  notes: '',
+})
+
+const goalForm = reactive({
+  title: '',
+  minutes: 60,
+  priority: 'medium',
+})
+
+const typeLabels = {
+  event: 'Event',
+  focus: 'Focus',
+  goal: 'Goal',
+}
+
+const selectedEvents = computed(() => calendar.eventsForDate(selectedDate.value))
+const selectedConflicts = computed(() => calendar.findConflicts(selectedDate.value))
+const suggestedSlots = computed(() => calendar.freeSlots(selectedDate.value, 45).slice(0, 5))
+const daySummary = computed(() => calendar.summarizeDay(selectedDate.value))
+const weekDays = computed(() => calendar.weekDates(selectedDate.value))
+const monthDays = computed(() => calendar.monthDates(selectedDate.value))
+
+watch(selectedDate, (date) => {
+  if (!editingId.value) {
+    eventForm.date = date
+    eventForm.endDate = date
+  }
+})
+
+function formatDay(dateKey, options = { weekday: 'short', day: 'numeric' }) {
+  return new Intl.DateTimeFormat(undefined, options).format(new Date(`${dateKey}T12:00:00`))
+}
+
+function formatMonth(dateKey) {
+  return new Intl.DateTimeFormat(undefined, { month: 'long', year: 'numeric' }).format(
+    new Date(`${dateKey}T12:00:00`),
+  )
+}
+
+function eventTop(event) {
+  return `${Math.max(0, (calendar.timeToMinutes(event.start) - 8 * 60) / 10)}px`
+}
+
+function eventHeight(event) {
+  const minutes = Math.max(30, calendar.timeToMinutes(event.end) - calendar.timeToMinutes(event.start))
+  return `${Math.max(34, minutes / 10)}px`
+}
+
+function eventDateLabel(event) {
+  return event.endDate && event.endDate !== event.date
+    ? `${formatDay(event.date, { month: 'short', day: 'numeric' })}-${formatDay(event.endDate, { month: 'short', day: 'numeric' })}`
+    : formatDay(event.date, { month: 'short', day: 'numeric' })
+}
+
+function eventTimeLabel(event) {
+  return `${event.start}-${event.end}`
+}
+
+function resetEventForm() {
+  editingId.value = null
+  Object.assign(eventForm, {
+    title: '',
+    date: selectedDate.value,
+    endDate: selectedDate.value,
+    start: '09:00',
+    end: '10:00',
+    type: 'event',
+    notes: '',
+  })
+}
+
+function submitEvent() {
+  if (!eventForm.title.trim()) return
+  if (!eventForm.endDate || eventForm.endDate < eventForm.date) {
+    eventForm.endDate = eventForm.date
+  }
+  if (editingId.value) {
+    calendar.updateEvent(editingId.value, eventForm)
+  } else {
+    calendar.addEvent(eventForm)
+  }
+  selectedDate.value = eventForm.date
+  resetEventForm()
+}
+
+function editEvent(event) {
+  editingId.value = event.id
+  Object.assign(eventForm, { ...event, endDate: event.endDate || event.date })
+}
+
+function removeEvent(id) {
+  calendar.deleteEvent(id)
+  if (editingId.value === id) resetEventForm()
+}
+
+function removeEditingEvent() {
+  if (!editingId.value) return
+  removeEvent(editingId.value)
+}
+
+function submitGoal() {
+  calendar.addGoal(goalForm.title, goalForm.minutes, goalForm.priority)
+  Object.assign(goalForm, { title: '', minutes: 60, priority: 'medium' })
+}
+
+async function askAssistant() {
+  if (!assistantPrompt.value.trim()) return
+  const prompt = assistantPrompt.value
+  assistantPrompt.value = ''
+  assistantMessage.value = await calendar.runAssistant(prompt, selectedDate.value, activeModel.value)
+}
+
+function useSlot(slot) {
+  Object.assign(eventForm, {
+    date: selectedDate.value,
+    endDate: selectedDate.value,
+    start: slot.start,
+    end: slot.end,
+    type: 'focus',
+  })
+}
 </script>
 
 <template>
-  <div class="calendar-view" :class="{ visible }">
-    <!-- Ambient glows -->
-    <div class="glow glow-1" />
-    <div class="glow glow-2" />
+  <div class="calendar-root">
+    <ViewTopbar tab="calendar" />
 
-    <div class="content">
-      <!-- Icon -->
-      <div class="icon-wrap">
-        <svg
-          xmlns="http://www.w3.org/2000/svg"
-          viewBox="0 0 24 24"
-          fill="none"
-          stroke="currentColor"
-          stroke-width="1.2"
-          stroke-linecap="round"
-          stroke-linejoin="round"
-          class="calendar-icon"
-        >
-          <rect x="3" y="4" width="18" height="18" rx="2" />
-          <line x1="16" y1="2" x2="16" y2="6" />
-          <line x1="8" y1="2" x2="8" y2="6" />
-          <line x1="3" y1="10" x2="21" y2="10" />
-          <!-- Calendar dots -->
-          <circle cx="8" cy="15" r="0.8" fill="currentColor" stroke="none" />
-          <circle cx="12" cy="15" r="0.8" fill="currentColor" stroke="none" />
-          <circle cx="16" cy="15" r="0.8" fill="currentColor" stroke="none" />
-        </svg>
-      </div>
+    <main class="calendar-workspace">
+      <section class="planner-main">
+        <header class="calendar-toolbar">
+          <div>
+            <p class="kicker">Calendar</p>
+            <h1>{{ formatMonth(selectedDate) }}</h1>
+          </div>
+          <div class="toolbar-actions">
+            <button class="nav-btn" title="Previous" @click="selectedDate = calendar.addDays(selectedDate, viewMode === 'month' ? -28 : -7)">‹</button>
+            <button class="nav-btn today" @click="selectedDate = calendar.todayKey()">Today</button>
+            <button class="nav-btn" title="Next" @click="selectedDate = calendar.addDays(selectedDate, viewMode === 'month' ? 28 : 7)">›</button>
+            <div class="segmented" aria-label="Calendar view">
+              <button :class="{ active: viewMode === 'month' }" @click="viewMode = 'month'">Month</button>
+              <button :class="{ active: viewMode === 'week' }" @click="viewMode = 'week'">Week</button>
+              <button :class="{ active: viewMode === 'day' }" @click="viewMode = 'day'">Day</button>
+            </div>
+          </div>
+        </header>
 
-      <!-- Text -->
-      <div class="text-block">
-        <div class="eyebrow">Coming soon</div>
-        <h2 class="title">Calendar</h2>
-        <p class="tagline">Plan. Schedule. Focus.</p>
-        <p class="description">
-          Intelligent scheduling that understands context — protect your deep-work time,
-          summarise upcoming events, and let the model handle the planning overhead.
-        </p>
-      </div>
-
-      <!-- Feature pills -->
-      <div class="features">
-        <div class="feature-pill">
-          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-            <circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/>
-          </svg>
-          Smart scheduling
+        <div class="summary-strip">
+          <div>
+            <span class="strip-label">Day brief</span>
+            <p>{{ daySummary }}</p>
+          </div>
+          <button class="quiet-btn" @click="assistantPrompt = `Summarize ${selectedDate}`">Summarize</button>
         </div>
-        <div class="feature-pill">
-          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-            <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/>
-          </svg>
-          Event summaries
-        </div>
-        <div class="feature-pill">
-          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-            <rect x="2" y="3" width="20" height="14" rx="2"/><line x1="8" y1="21" x2="16" y2="21"/><line x1="12" y1="17" x2="12" y2="21"/>
-          </svg>
-          Focus blocks
-        </div>
-        <div class="feature-pill">
-          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-            <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/>
-          </svg>
-          Natural language input
-        </div>
-      </div>
 
-      <!-- Divider -->
-      <div class="divider" />
+        <section v-if="viewMode === 'month'" class="month-grid">
+          <div v-for="label in ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun']" :key="label" class="weekday">
+            {{ label }}
+          </div>
+          <div
+            v-for="day in monthDays"
+            :key="day"
+            class="month-cell"
+            :class="{ selected: day === selectedDate, outside: day.slice(0, 7) !== selectedDate.slice(0, 7) }"
+            role="button"
+            tabindex="0"
+            @click="selectedDate = day"
+            @keydown.enter="selectedDate = day"
+          >
+            <span>{{ formatDay(day, { day: 'numeric' }) }}</span>
+            <div class="month-events">
+              <button
+                v-for="event in calendar.eventsForDate(day).slice(0, 3)"
+                :key="event.id"
+                class="month-event"
+                :class="event.type"
+                @click.stop="editEvent(event)"
+              >
+                {{ event.start }} {{ event.title }}
+              </button>
+            </div>
+          </div>
+        </section>
 
-      <p class="footnote">Local-first · No cloud sync · Powered by your Ollama model</p>
-    </div>
+        <section v-else-if="viewMode === 'week'" class="week-grid">
+          <div
+            v-for="day in weekDays"
+            :key="day"
+            class="week-day"
+            :class="{ selected: day === selectedDate }"
+            role="button"
+            tabindex="0"
+            @click="selectedDate = day"
+            @keydown.enter="selectedDate = day"
+          >
+            <header>
+              <span>{{ formatDay(day) }}</span>
+              <strong>{{ calendar.eventsForDate(day).length }}</strong>
+            </header>
+            <div class="day-lane">
+              <article
+                v-for="event in calendar.eventsForDate(day)"
+                :key="event.id"
+                class="event-block"
+                :class="event.type"
+                :style="{ top: eventTop(event), height: eventHeight(event) }"
+              >
+                <button class="event-main" @click.stop="editEvent(event)">
+                  <span>{{ eventTimeLabel(event) }}</span>
+                  {{ event.title }}
+                </button>
+                <button class="event-remove" title="Delete event" @click.stop="removeEvent(event.id)">×</button>
+              </article>
+            </div>
+          </div>
+        </section>
+
+        <section v-else class="day-view">
+          <div class="day-heading">
+            <h2>{{ formatDay(selectedDate, { weekday: 'long', month: 'long', day: 'numeric' }) }}</h2>
+            <span>{{ selectedEvents.length }} scheduled</span>
+          </div>
+          <div class="agenda">
+            <article v-for="event in selectedEvents" :key="event.id" class="agenda-event" :class="event.type">
+              <time>{{ eventTimeLabel(event) }}</time>
+              <div>
+                <h3>{{ event.title }}</h3>
+                <p v-if="event.notes">{{ event.notes }}</p>
+                <span>{{ typeLabels[event.type] }} · {{ eventDateLabel(event) }}</span>
+              </div>
+              <button class="icon-action" title="Edit" @click="editEvent(event)">✎</button>
+              <button class="icon-action" title="Delete" @click="removeEvent(event.id)">×</button>
+            </article>
+            <p v-if="!selectedEvents.length" class="empty-copy">No events on this date.</p>
+          </div>
+        </section>
+      </section>
+
+      <aside class="planner-side">
+        <section class="panel assistant-panel">
+          <div class="panel-head">
+            <h2>Assistant</h2>
+            <span>{{ activeModel || 'local rules' }}</span>
+          </div>
+          <form class="assistant-form" @submit.prevent="askAssistant">
+            <textarea
+              v-model="assistantPrompt"
+              rows="3"
+              :placeholder="activeModel ? 'Ask to create, move, summarize, or plan...' : 'No model selected. Try: summarize, resolve conflicts, plan goals.'"
+            />
+            <button :disabled="calendar.assistantLoading.value">
+              {{ calendar.assistantLoading.value ? 'Thinking...' : 'Ask' }}
+            </button>
+          </form>
+          <p v-if="assistantMessage" class="assistant-message">{{ assistantMessage }}</p>
+          <p v-if="calendar.assistantError.value" class="assistant-error">{{ calendar.assistantError.value }}</p>
+          <div class="quick-actions">
+            <button @click="calendar.resolveConflicts(selectedDate)">Resolve conflicts</button>
+            <button @click="calendar.scheduleAllGoals(selectedDate)">Plan goals</button>
+          </div>
+        </section>
+
+        <section class="panel">
+          <div class="panel-head">
+            <h2>{{ editingId ? 'Edit Event' : 'New Event' }}</h2>
+            <button v-if="editingId" class="text-btn" @click="resetEventForm">Cancel</button>
+          </div>
+          <form class="stack-form" @submit.prevent="submitEvent">
+            <input v-model="eventForm.title" placeholder="Title" />
+            <div class="two-col">
+              <input v-model="eventForm.date" type="date" />
+              <input v-model="eventForm.endDate" type="date" />
+            </div>
+            <div class="two-col">
+              <select v-model="eventForm.type">
+                <option value="event">Event</option>
+                <option value="focus">Focus</option>
+                <option value="goal">Goal</option>
+              </select>
+            </div>
+            <div class="two-col">
+              <input v-model="eventForm.start" type="time" />
+              <input v-model="eventForm.end" type="time" />
+            </div>
+            <textarea v-model="eventForm.notes" rows="2" placeholder="Notes" />
+            <div class="form-actions">
+              <button>{{ editingId ? 'Save event' : 'Add event' }}</button>
+              <button v-if="editingId" type="button" class="danger-btn" @click="removeEditingEvent">
+                Delete
+              </button>
+            </div>
+          </form>
+        </section>
+
+        <section class="panel">
+          <div class="panel-head">
+            <h2>Suggested Blocks</h2>
+            <span>{{ selectedConflicts.length }} conflicts</span>
+          </div>
+          <div class="slot-list">
+            <button v-for="slot in suggestedSlots" :key="`${slot.start}-${slot.end}`" @click="useSlot(slot)">
+              {{ slot.start }}-{{ slot.end }}
+            </button>
+            <p v-if="!suggestedSlots.length" class="empty-copy">No open block found.</p>
+          </div>
+        </section>
+
+        <section class="panel">
+          <div class="panel-head">
+            <h2>Goals</h2>
+            <span>{{ calendar.goals.value.length }}</span>
+          </div>
+          <form class="goal-form" @submit.prevent="submitGoal">
+            <input v-model="goalForm.title" placeholder="Goal or task" />
+            <input v-model.number="goalForm.minutes" type="number" min="15" step="15" />
+            <select v-model="goalForm.priority">
+              <option value="high">High</option>
+              <option value="medium">Medium</option>
+              <option value="low">Low</option>
+            </select>
+            <button>Add</button>
+          </form>
+          <div class="goal-list">
+            <article v-for="goal in calendar.goals.value" :key="goal.id">
+              <div>
+                <strong>{{ goal.title }}</strong>
+                <span>{{ goal.minutes }}m · {{ goal.priority }}</span>
+              </div>
+              <button title="Schedule" @click="calendar.scheduleGoal(goal, selectedDate)">+</button>
+              <button title="Delete" @click="calendar.deleteGoal(goal.id)">×</button>
+            </article>
+          </div>
+        </section>
+      </aside>
+    </main>
   </div>
 </template>
 
 <style scoped>
-.calendar-view {
-  position: relative;
+.calendar-root {
   display: flex;
-  align-items: center;
-  justify-content: center;
+  flex-direction: column;
+  height: 100%;
+  background: var(--color-bg);
+  overflow: hidden;
+}
+
+.calendar-workspace {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 360px;
+  gap: 18px;
   height: 100%;
   overflow: hidden;
-  opacity: 0;
-  transform: translateY(12px);
-  transition: opacity 0.45s ease, transform 0.45s ease;
+  padding: 18px;
 }
 
-.calendar-view.visible {
-  opacity: 1;
-  transform: translateY(0);
+.planner-main,
+.planner-side {
+  min-height: 0;
+  overflow: auto;
 }
 
-/* Background glows */
-.glow {
-  position: absolute;
-  border-radius: 50%;
-  pointer-events: none;
-  filter: blur(100px);
-}
-
-.glow-1 {
-  width: 500px;
-  height: 350px;
-  background: radial-gradient(ellipse, rgba(135, 4, 0, 0.14) 0%, transparent 70%);
-  top: -80px;
-  left: 50%;
-  transform: translateX(-50%);
-}
-
-.glow-2 {
-  width: 400px;
-  height: 250px;
-  background: radial-gradient(ellipse, rgba(80, 0, 1, 0.10) 0%, transparent 70%);
-  bottom: -40px;
-  left: 50%;
-  transform: translateX(-50%);
-}
-
-/* Content card */
-.content {
-  position: relative;
-  z-index: 1;
+.planner-main {
   display: flex;
   flex-direction: column;
-  align-items: center;
-  gap: 28px;
-  max-width: 440px;
-  width: 100%;
-  padding: 0 24px;
+  gap: 14px;
 }
 
-/* Icon */
-.icon-wrap {
-  width: 72px;
-  height: 72px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  background: rgba(135, 4, 0, 0.1);
-  border: 1px solid #3a1010;
-  border-radius: 18px;
-  color: #870400;
-  animation: icon-pulse 4s ease-in-out infinite;
-}
-
-.calendar-icon {
-  width: 36px;
-  height: 36px;
-}
-
-@keyframes icon-pulse {
-  0%, 100% { box-shadow: 0 0 0 0 rgba(135, 4, 0, 0); border-color: #3a1010; color: #870400; }
-  50% { box-shadow: 0 0 24px rgba(135, 4, 0, 0.2); border-color: #6a1010; color: #b03010; }
-}
-
-/* Text */
-.text-block {
+.planner-side {
   display: flex;
   flex-direction: column;
-  align-items: center;
-  gap: 8px;
-  text-align: center;
+  gap: 12px;
 }
 
-.eyebrow {
+.calendar-toolbar,
+.summary-strip,
+.panel,
+.month-cell,
+.week-day,
+.agenda-event {
+  border: 1px solid var(--assistant-bubble-border);
+  background: var(--assistant-bubble-bg);
+}
+
+.calendar-toolbar {
+  display: flex;
+  justify-content: space-between;
+  gap: 16px;
+  align-items: center;
+  padding: 14px;
+  border-radius: 8px;
+}
+
+.kicker,
+.strip-label,
+.panel-head span {
   font-family: var(--font-mono), monospace;
   font-size: 10px;
-  letter-spacing: 0.22em;
+  color: var(--status-muted-color);
+  letter-spacing: 0.08em;
   text-transform: uppercase;
-  color: #a50500;
-  background: rgba(135, 4, 0, 0.12);
-  border: 1px solid #3a1010;
-  padding: 3px 12px;
-  border-radius: 20px;
 }
 
-.title {
+h1,
+h2,
+h3 {
   font-family: var(--font-serif), serif;
-  font-size: 2.4rem;
-  font-weight: 800;
   color: var(--beige);
-  margin: 0;
-  letter-spacing: -0.01em;
+  letter-spacing: 0;
 }
 
-.tagline {
+h1 {
+  font-size: 28px;
+}
+
+h2 {
+  font-size: 18px;
+}
+
+h3 {
+  font-size: 15px;
+}
+
+.toolbar-actions,
+.segmented,
+.quick-actions,
+.two-col,
+.goal-form,
+.panel-head {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+button,
+input,
+select,
+textarea {
+  font: inherit;
+}
+
+button {
+  cursor: pointer;
+}
+
+.nav-btn,
+.segmented button,
+.quiet-btn,
+.text-btn,
+.quick-actions button,
+.slot-list button,
+.icon-action,
+.goal-list button,
+form button {
+  border: 1px solid var(--icon-btn-border);
+  background: var(--model-selector-bg);
+  color: var(--beige);
+  border-radius: 6px;
+}
+
+.nav-btn {
+  min-width: 34px;
+  height: 34px;
+  padding: 0 10px;
+}
+
+.today {
   font-family: var(--font-mono), monospace;
-  font-size: 12px;
-  color: var(--orange);
-  letter-spacing: 0.1em;
-  margin: 0;
+  font-size: 11px;
 }
 
-.description {
+.segmented {
+  padding: 3px;
+  border: 1px solid var(--model-selector-border);
+  border-radius: 8px;
+  background: var(--color-bg);
+}
+
+.segmented button {
+  height: 28px;
+  padding: 0 10px;
+  color: var(--status-muted-color);
+  border-color: transparent;
+  background: transparent;
+}
+
+.segmented button.active {
+  color: var(--beige);
+  background: var(--sidebar-tab-active-bg);
+  border-color: var(--model-selector-border);
+}
+
+.summary-strip {
+  display: flex;
+  justify-content: space-between;
+  gap: 16px;
+  align-items: center;
+  padding: 12px 14px;
+  border-radius: 8px;
+}
+
+.summary-strip p,
+.assistant-message,
+.assistant-error,
+.empty-copy,
+.agenda-event p {
   font-family: var(--font-sans), sans-serif;
   font-size: 13px;
-  line-height: 1.7;
-  color: #a4654c;
-  margin: 8px 0 0;
-  max-width: 360px;
+  color: var(--assistant-bubble-color);
+  line-height: 1.45;
 }
 
-/* Feature pills */
-.features {
-  display: flex;
-  flex-wrap: wrap;
+.month-grid {
+  display: grid;
+  grid-template-columns: repeat(7, minmax(0, 1fr));
   gap: 8px;
-  justify-content: center;
 }
 
-.feature-pill {
-  display: flex;
-  align-items: center;
-  gap: 7px;
-  padding: 6px 13px;
-  background: rgba(164, 5, 0, 0.06);
-  border: 1px solid #6f2c2c;
-  border-radius: 20px;
-  font-family: var(--font-sans), sans-serif;
-  font-size: 11px;
-  font-weight: 500;
-  color: #83472f;
-  letter-spacing: 0.03em;
-}
-
-.feature-pill svg {
-  width: 12px;
-  height: 12px;
-  color: #ae4629;
-  flex-shrink: 0;
-}
-
-/* Divider */
-.divider {
-  width: 100%;
-  max-width: 280px;
-  height: 1px;
-  background: linear-gradient(90deg, transparent, #853030, transparent);
-}
-
-.footnote {
+.weekday {
   font-family: var(--font-mono), monospace;
   font-size: 10px;
-  letter-spacing: 0.14em;
-  color: #9f482d;
-  text-transform: uppercase;
+  color: var(--status-muted-color);
+  padding: 0 6px;
+}
+
+.month-cell {
+  min-height: 112px;
+  border-radius: 8px;
+  padding: 9px;
+  color: var(--beige);
+  text-align: left;
+  overflow: hidden;
+  cursor: pointer;
+}
+
+.month-cell.selected,
+.week-day.selected {
+  border-color: var(--orange);
+}
+
+.month-cell.outside {
+  opacity: 0.48;
+}
+
+.month-events {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  margin-top: 8px;
+}
+
+.month-event,
+.event-block {
+  display: block;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  border-left: 3px solid var(--orange);
+  background: rgba(240, 118, 12, 0.1);
+  color: var(--assistant-bubble-color);
+  border-radius: 5px;
+  padding: 4px 6px;
+  font-size: 11px;
+}
+
+.month-event {
+  width: 100%;
+  border-top: 0;
+  border-right: 0;
+  border-bottom: 0;
+  text-align: left;
+}
+
+.month-events .focus,
+.event-block.focus,
+.agenda-event.focus {
+  border-left-color: #4ea3ff;
+}
+
+.month-events .goal,
+.event-block.goal,
+.agenda-event.goal {
+  border-left-color: #54c47c;
+}
+
+.week-grid {
+  display: grid;
+  grid-template-columns: repeat(7, minmax(112px, 1fr));
+  gap: 8px;
+  min-height: 690px;
+}
+
+.week-day {
+  position: relative;
+  border-radius: 8px;
+  padding: 10px;
+  text-align: left;
+  color: var(--beige);
+}
+
+.week-day header {
+  display: flex;
+  justify-content: space-between;
+  font-family: var(--font-mono), monospace;
+  font-size: 11px;
+  color: var(--status-muted-color);
+}
+
+.day-lane {
+  position: relative;
+  height: 620px;
+  margin-top: 10px;
+  background:
+    repeating-linear-gradient(
+      to bottom,
+      transparent 0,
+      transparent 29px,
+      var(--chat-input-border) 30px
+    );
+}
+
+.event-block {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 22px;
+  gap: 4px;
+  position: absolute;
+  left: 0;
+  right: 0;
+  border-top: 0;
+  border-right: 0;
+  border-bottom: 0;
+  text-align: left;
+  white-space: normal;
+  padding: 3px;
+}
+
+.event-main {
+  min-width: 0;
+  border: 0;
+  background: transparent;
+  color: inherit;
+  padding: 0 3px;
+  text-align: left;
+}
+
+.event-main span {
+  display: block;
+  color: var(--status-muted-color);
+}
+
+.event-remove {
+  width: 20px;
+  height: 20px;
+  border: 0;
+  background: transparent;
+  color: var(--status-muted-color);
+  border-radius: 4px;
+  padding: 0;
+}
+
+.event-remove:hover,
+.danger-btn:hover {
+  color: var(--status-error-color);
+  border-color: var(--status-error-color);
+}
+
+.day-view {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.day-heading {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+}
+
+.day-heading span {
+  color: var(--status-muted-color);
+}
+
+.agenda {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.agenda-event {
+  display: grid;
+  grid-template-columns: 88px minmax(0, 1fr) 30px 30px;
+  gap: 10px;
+  align-items: center;
+  border-left: 3px solid var(--orange);
+  border-radius: 8px;
+  padding: 12px;
+}
+
+.agenda-event time,
+.agenda-event span {
+  font-family: var(--font-mono), monospace;
+  font-size: 11px;
+  color: var(--status-muted-color);
+}
+
+.panel {
+  border-radius: 8px;
+  padding: 12px;
+}
+
+.panel-head {
+  justify-content: space-between;
+  margin-bottom: 10px;
+}
+
+.stack-form,
+.assistant-form,
+.slot-list,
+.goal-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.form-actions {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 8px;
+}
+
+.danger-btn {
+  color: var(--status-error-color);
+}
+
+input,
+select,
+textarea {
+  width: 100%;
+  border: 1px solid var(--modal-input-border);
+  background: var(--modal-input-bg);
+  color: var(--beige);
+  border-radius: 6px;
+  padding: 9px 10px;
+  min-width: 0;
+}
+
+textarea {
+  resize: vertical;
+}
+
+form button,
+.assistant-form button {
+  min-height: 34px;
+  padding: 0 12px;
+}
+
+.quick-actions button,
+.slot-list button {
+  padding: 8px 10px;
+  text-align: left;
+}
+
+.assistant-error {
+  color: var(--status-error-color);
+}
+
+.goal-form {
+  align-items: stretch;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 74px 92px 54px;
+}
+
+.goal-list article {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 28px 28px;
+  gap: 6px;
+  align-items: center;
+  padding: 8px 0;
+  border-top: 1px solid var(--chat-input-border);
+}
+
+.goal-list strong,
+.goal-list span {
+  display: block;
+}
+
+.goal-list strong {
+  color: var(--beige);
+  font-size: 13px;
+}
+
+.goal-list span {
+  color: var(--status-muted-color);
+  font-size: 11px;
+}
+
+.icon-action,
+.goal-list button {
+  width: 28px;
+  height: 28px;
+}
+
+@media (max-width: 1100px) {
+  .calendar-workspace {
+    grid-template-columns: 1fr;
+    overflow: auto;
+  }
+
+  .planner-main,
+  .planner-side {
+    overflow: visible;
+  }
+
+  .week-grid {
+    overflow-x: auto;
+  }
+}
+
+@media (max-width: 720px) {
+  .calendar-workspace {
+    padding: 12px;
+  }
+
+  .calendar-toolbar,
+  .summary-strip {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  .toolbar-actions {
+    flex-wrap: wrap;
+  }
+
+  .month-grid {
+    gap: 5px;
+  }
+
+  .month-cell {
+    min-height: 86px;
+    padding: 7px;
+  }
+
+  .goal-form {
+    grid-template-columns: 1fr;
+  }
 }
 </style>

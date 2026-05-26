@@ -131,8 +131,11 @@ const isStreaming = computed(() => {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 12px 24px;
+  padding: 13px 28px;
   border-bottom: 1px solid var(--chat-header-border);
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.025), transparent),
+    var(--color-bg);
   flex-shrink: 0;
   transition: border-color 0.25s ease;
 }
@@ -142,7 +145,7 @@ const isStreaming = computed(() => {
   font-size: 13px;
   font-weight: 600;
   color: var(--beige);
-  letter-spacing: 0.04em;
+  letter-spacing: 0.01em;
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -160,10 +163,10 @@ const isStreaming = computed(() => {
   font-family: var(--font-mono), monospace;
   font-size: 11px;
   color: var(--orange);
-  background: rgba(240, 118, 12, 0.08);
-  border: 1px solid rgba(240, 118, 12, 0.2);
-  border-radius: 20px;
-  padding: 2px 10px;
+  background: rgba(242, 122, 26, 0.09);
+  border: 1px solid rgba(242, 122, 26, 0.24);
+  border-radius: 999px;
+  padding: 3px 10px;
   white-space: nowrap;
 }
 
@@ -194,10 +197,10 @@ const isStreaming = computed(() => {
 .chat-messages {
   flex: 1;
   overflow-y: auto;
-  padding: 24px;
+  padding: 28px;
   display: flex;
   flex-direction: column;
-  gap: 20px;
+  gap: 22px;
   scrollbar-width: thin;
   scrollbar-color: var(--sidebar-border) transparent;
 }
@@ -213,7 +216,7 @@ const isStreaming = computed(() => {
 .message.assistant { justify-content: flex-start; }
 
 .message-bubble {
-  max-width: 78%;
+  max-width: min(78%, 880px);
   display: flex;
   flex-direction: column;
   gap: 4px;
@@ -224,14 +227,14 @@ const isStreaming = computed(() => {
 /* User bubble */
 .user-content {
   display: block;
-  padding: 10px 14px;
-  border-radius: 10px;
+  padding: 11px 15px;
+  border-radius: 8px;
   border-bottom-right-radius: 3px;
   background: var(--user-bubble-bg);
   border: 1px solid var(--user-bubble-border);
   color: var(--user-bubble-color);
   font-family: var(--font-mono), monospace;
-  font-size: 13px;
+  font-size: 13.2px;
   line-height: 1.6;
   white-space: pre-wrap;
   word-break: break-word;
@@ -241,15 +244,16 @@ const isStreaming = computed(() => {
 /* Assistant bubble */
 .assistant-content {
   position: relative;
-  padding: 12px 16px;
-  border-radius: 10px;
+  padding: 14px 17px;
+  border-radius: 8px;
   border-bottom-left-radius: 3px;
   background: var(--assistant-bubble-bg);
   border: 1px solid var(--assistant-bubble-border);
   color: var(--assistant-bubble-color);
   font-family: var(--font-sans), sans-serif;
-  font-size: 13.5px;
-  line-height: 1.75;
+  font-size: 14px;
+  line-height: 1.72;
+  box-shadow: 0 10px 26px rgba(0, 0, 0, 0.12);
   word-break: break-word;
   transition: background 0.25s ease, border-color 0.25s ease, color 0.25s ease;
 }
@@ -287,15 +291,18 @@ const isStreaming = computed(() => {
 .message-time {
   font-family: var(--font-mono), monospace;
   font-size: 10px;
-  color: var(--sidebar-new-chat-border);
+  color: var(--status-muted-color);
   padding: 0 2px;
 }
 
 /* Input area */
 .chat-input-area {
   flex-shrink: 0;
-  padding: 16px 24px 20px;
+  padding: 18px 28px 22px;
   border-top: 1px solid var(--chat-input-border);
+  background:
+    linear-gradient(180deg, transparent, rgba(0, 0, 0, 0.08)),
+    var(--color-bg);
   display: flex;
   justify-content: center;
   transition: border-color 0.25s ease;

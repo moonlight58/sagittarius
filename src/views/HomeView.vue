@@ -40,7 +40,7 @@ const features = [
     tagline: 'Plan. Schedule. Focus.',
     description:
       'Coming soon — intelligent scheduling that understands context and helps you protect deep-work time.',
-    accent: '#870400',
+    accent: '#5aa7ff',
     soon: true,
   },
 ]
@@ -168,13 +168,20 @@ const features = [
   transform: translateY(0);
 }
 
-/* ── Background ── */
-.bg-glow {
+.home::before {
+  content: '';
   position: fixed;
-  border-radius: 50%;
+  inset: 0;
   pointer-events: none;
   z-index: 0;
-  filter: blur(120px);
+  background:
+    linear-gradient(120deg, rgba(242, 122, 26, 0.07), transparent 34%),
+    linear-gradient(240deg, rgba(90, 167, 255, 0.055), transparent 38%);
+}
+
+/* ── Background ── */
+.bg-glow {
+  display: none;
 }
 
 .bg-glow-1 {
@@ -279,7 +286,7 @@ const features = [
   font-weight: 800;
   line-height: 1;
   margin: 0;
-  letter-spacing: -0.01em;
+  letter-spacing: 0;
 }
 
 .title-word {
@@ -295,7 +302,7 @@ const features = [
   font-family: var(--font-sans), sans-serif;
   font-size: 14px;
   line-height: 1.75;
-  color: #9a6a55;
+  color: var(--text-muted);
   max-width: 480px;
   margin: 0;
   text-align: center;
@@ -313,7 +320,7 @@ const features = [
 .divider-line {
   flex: 1;
   height: 1px;
-  background: linear-gradient(90deg, transparent, #3d1010, transparent);
+  background: linear-gradient(90deg, transparent, var(--sidebar-divider), transparent);
 }
 
 .divider-label {
@@ -321,7 +328,7 @@ const features = [
   font-size: 10px;
   letter-spacing: 0.18em;
   text-transform: uppercase;
-  color: #5a2a20;
+  color: var(--status-muted-color);
   white-space: nowrap;
 }
 
@@ -345,8 +352,8 @@ const features = [
 .feature-card {
   position: relative;
   background: var(--card-bg);
-  border: 1px solid #2e1010;
-  border-radius: 10px;
+  border: 1px solid var(--assistant-bubble-border);
+  border-radius: 8px;
   padding: 24px;
   cursor: pointer;
   display: flex;
@@ -376,7 +383,7 @@ const features = [
   border-color: var(--accent);
   transform: translateY(-3px);
   box-shadow:
-    0 12px 40px rgba(0, 0, 0, 0.4),
+    0 14px 38px rgba(0, 0, 0, 0.22),
     0 0 0 1px var(--accent);
 }
 
@@ -399,7 +406,7 @@ const features = [
   position: absolute;
   width: 10px;
   height: 10px;
-  border-color: #3d1010;
+  border-color: var(--sidebar-divider);
   border-style: solid;
 }
 .card-corner-tl {
@@ -438,16 +445,16 @@ const features = [
 .feature-card[style*='#c84a30'] {
   --glow-rgb: 200, 74, 48;
 }
-.feature-card[style*='#870400'] {
-  --glow-rgb: 135, 4, 0;
+.feature-card[style*='#5aa7ff'] {
+  --glow-rgb: 90, 167, 255;
 }
 
 /* Icon */
 .card-icon-wrap {
   width: 38px;
   height: 38px;
-  background: rgba(135, 4, 0, 0.15);
-  border: 1px solid #3a1010;
+  background: var(--model-selector-bg);
+  border: 1px solid var(--model-selector-border);
   border-radius: 8px;
   display: flex;
   align-items: center;
@@ -460,7 +467,7 @@ const features = [
 }
 
 .feature-card:not(.soon):hover .card-icon-wrap {
-  background: rgba(135, 4, 0, 0.25);
+  background: rgba(var(--glow-rgb, 242, 122, 26), 0.12);
   border-color: var(--accent);
 }
 
@@ -504,14 +511,14 @@ const features = [
   font-family: var(--font-sans), sans-serif;
   font-size: 12px;
   line-height: 1.7;
-  color: #7a5040;
+  color: var(--text-muted);
   margin: 8px 0 0;
 }
 
 /* Footer */
 .card-footer {
   padding-top: 12px;
-  border-top: 1px solid #1e0808;
+  border-top: 1px solid var(--chat-input-border);
 }
 
 .card-cta {
@@ -522,7 +529,7 @@ const features = [
   font-size: 11px;
   letter-spacing: 0.1em;
   text-transform: uppercase;
-  color: #6a3a28;
+  color: var(--status-muted-color);
   transition:
     color 0.25s,
     gap 0.25s;
@@ -541,11 +548,11 @@ const features = [
   font-size: 10px;
   letter-spacing: 0.14em;
   text-transform: uppercase;
-  color: #4a2a1a;
-  background: rgba(80, 0, 1, 0.2);
-  border: 1px solid #3a1010;
+  color: var(--status-muted-color);
+  background: var(--model-selector-bg);
+  border: 1px solid var(--model-selector-border);
   padding: 3px 8px;
-  border-radius: 20px;
+  border-radius: 999px;
   display: inline-block;
 }
 
@@ -560,7 +567,7 @@ const features = [
   font-family: var(--font-mono), monospace;
   font-size: 10px;
   letter-spacing: 0.14em;
-  color: #3a1a10;
+  color: var(--status-muted-color);
   text-transform: uppercase;
 }
 </style>

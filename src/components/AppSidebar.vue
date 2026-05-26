@@ -241,10 +241,13 @@ const tabIcons = {
   position: relative;
   display: flex;
   flex-direction: column;
-  width: 220px;
+  width: 236px;
   min-height: 100vh;
-  background-color: var(--sidebar-bg);
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.035), transparent 180px),
+    var(--sidebar-bg);
   border-right: 1px solid var(--sidebar-border);
+  box-shadow: 10px 0 28px rgba(0, 0, 0, 0.18);
   transition:
     width 0.3s cubic-bezier(0.4, 0, 0.2, 1),
     background-color 0.25s ease,
@@ -261,7 +264,7 @@ const tabIcons = {
   display: flex;
   align-items: center;
   gap: 10px;
-  padding: 16px 14px;
+  padding: 18px 16px;
   border-bottom: 1px solid var(--sidebar-logo-border);
   overflow: hidden;
   min-height: 56px;
@@ -270,8 +273,8 @@ const tabIcons = {
 }
 
 .logo-icon {
-  width: 26px;
-  height: 26px;
+  width: 28px;
+  height: 28px;
   flex-shrink: 0;
   color: var(--orange);
   filter: drop-shadow(0 0 5px rgba(240, 118, 12, 0.4));
@@ -284,8 +287,8 @@ const tabIcons = {
 .logo-name {
   font-family: var(--font-serif), sans-serif;
   font-weight: 800;
-  font-size: 0.95rem;
-  letter-spacing: 0.12em;
+  font-size: 1rem;
+  letter-spacing: 0.08em;
   color: var(--beige);
   white-space: nowrap;
   transition: color 0.25s ease;
@@ -295,7 +298,7 @@ const tabIcons = {
   display: flex;
   flex-direction: column;
   gap: 2px;
-  padding: 10px 8px;
+  padding: 12px 10px;
   flex-shrink: 0;
 }
 
@@ -304,8 +307,8 @@ const tabIcons = {
   display: flex;
   align-items: center;
   gap: 10px;
-  padding: 9px 10px;
-  border: none;
+  padding: 10px 11px;
+  border: 1px solid transparent;
   background: transparent;
   border-radius: 6px;
   cursor: pointer;
@@ -322,9 +325,11 @@ const tabIcons = {
 .tab-btn:hover {
   background: var(--sidebar-tab-hover-bg);
   color: var(--beige);
+  border-color: var(--sidebar-logo-border);
 }
 .tab-btn.active {
   background: var(--sidebar-tab-active-bg);
+  border-color: rgba(242, 122, 26, 0.28);
   color: var(--orange);
 }
 
@@ -343,22 +348,22 @@ const tabIcons = {
 
 .tab-label {
   font-family: var(--font-sans), sans-serif;
-  font-size: 12px;
+  font-size: 12.5px;
   font-weight: 600;
-  letter-spacing: 0.08em;
+  letter-spacing: 0.03em;
   white-space: nowrap;
 }
 
 .active-pip {
   position: absolute;
-  right: 0;
+  right: 6px;
   top: 50%;
   transform: translateY(-50%);
-  width: 3px;
-  height: 55%;
+  width: 4px;
+  height: 4px;
   background: var(--orange);
-  border-radius: 2px 0 0 2px;
-  box-shadow: 0 0 8px rgba(240, 118, 12, 0.6);
+  border-radius: 999px;
+  box-shadow: 0 0 10px rgba(242, 122, 26, 0.7);
 }
 
 .sidebar-divider {
@@ -384,16 +389,15 @@ const tabIcons = {
   align-items: center;
   gap: 8px;
   width: 100%;
-  padding: 7px 10px;
-  background: transparent;
-  border: 1px dashed var(--sidebar-new-chat-border);
+  padding: 8px 10px;
+  background: var(--model-selector-bg);
+  border: 1px solid var(--sidebar-new-chat-border);
   border-radius: 6px;
   color: var(--sidebar-new-chat-color);
   font-family: var(--font-sans), sans-serif;
   font-size: 11px;
   font-weight: 600;
-  letter-spacing: 0.07em;
-  text-transform: uppercase;
+  letter-spacing: 0.03em;
   cursor: pointer;
   transition:
     border-color 0.25s,
@@ -439,8 +443,9 @@ const tabIcons = {
   align-items: center;
   justify-content: space-between;
   gap: 6px;
-  padding: 6px 6px 6px 10px;
-  border-radius: 5px;
+  padding: 7px 7px 7px 10px;
+  border: 1px solid transparent;
+  border-radius: 6px;
   cursor: pointer;
   transition:
     background 0.25s ease,
@@ -452,9 +457,11 @@ const tabIcons = {
 .history-item:hover {
   background: var(--history-item-hover-bg);
   color: var(--sidebar-tab-color);
+  border-color: var(--sidebar-logo-border);
 }
 .history-item.active {
   background: var(--history-item-active-bg);
+  border-color: rgba(242, 122, 26, 0.22);
   color: var(--beige);
 }
 
@@ -527,7 +534,7 @@ const tabIcons = {
   gap: 8px;
   flex: 1;
   min-width: 0;
-  padding: 6px 8px;
+  padding: 7px 8px;
   background: transparent;
   border: none;
   border-radius: 6px;
@@ -559,7 +566,7 @@ const tabIcons = {
   font-family: var(--font-sans), sans-serif;
   font-size: 11px;
   font-weight: 600;
-  letter-spacing: 0.07em;
+  letter-spacing: 0.03em;
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -567,12 +574,12 @@ const tabIcons = {
 
 /* Collapse toggle */
 .collapse-toggle {
-  width: 26px;
-  height: 26px;
+  width: 28px;
+  height: 28px;
   flex-shrink: 0;
   background: var(--sidebar-collapse-bg);
   border: 1px solid var(--sidebar-collapse-border);
-  border-radius: 50%;
+  border-radius: 7px;
   display: flex;
   align-items: center;
   justify-content: center;

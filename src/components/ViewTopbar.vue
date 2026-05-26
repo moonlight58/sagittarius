@@ -177,11 +177,13 @@ function pickModel(name) {
   display: flex;
   align-items: center;
   gap: 10px;
-  padding: 10px 20px;
+  padding: 12px 22px;
   border-bottom: 1px solid var(--topbar-border);
   flex-shrink: 0;
   flex-wrap: wrap;
-  background: var(--color-bg);
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.035), transparent),
+    var(--color-bg);
   transition:
     border-color 0.25s ease,
     background 0.25s ease;
@@ -191,8 +193,8 @@ function pickModel(name) {
   display: flex;
   align-items: center;
   gap: 7px;
-  padding: 5px 12px;
-  border-radius: 5px;
+  padding: 6px 12px;
+  border-radius: 7px;
   font-family: var(--font-mono), monospace;
   font-size: 11px;
 }
@@ -261,19 +263,20 @@ function pickModel(name) {
 }
 
 .icon-btn {
-  width: 30px;
-  height: 30px;
+  width: 32px;
+  height: 32px;
   display: flex;
   align-items: center;
   justify-content: center;
   background: transparent;
   border: 1px solid var(--icon-btn-border);
-  border-radius: 5px;
+  border-radius: 7px;
   color: var(--icon-btn-color);
   cursor: pointer;
   transition:
     color 0.15s,
-    border-color 0.15s;
+    border-color 0.15s,
+    background 0.15s;
   padding: 0;
 }
 .icon-btn svg {
@@ -283,6 +286,7 @@ function pickModel(name) {
 .icon-btn:hover:not(:disabled) {
   color: var(--orange);
   border-color: var(--orange);
+  background: var(--model-selector-bg);
 }
 .icon-btn:disabled {
   opacity: 0.4;
@@ -297,10 +301,10 @@ function pickModel(name) {
   display: flex;
   align-items: center;
   gap: 7px;
-  padding: 6px 12px;
+  padding: 7px 12px;
   background: var(--model-selector-bg);
   border: 1px solid var(--model-selector-border);
-  border-radius: 5px;
+  border-radius: 7px;
   color: var(--beige);
   font-family: var(--font-mono), monospace;
   font-size: 12px;
@@ -347,10 +351,10 @@ function pickModel(name) {
   min-width: 100%;
   background: var(--model-dropdown-bg);
   border: 1px solid var(--model-selector-border);
-  border-radius: 6px;
+  border-radius: 8px;
   overflow: hidden;
   z-index: 50;
-  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.2);
+  box-shadow: 0 16px 38px rgba(0, 0, 0, 0.26);
   transition: background 0.25s ease;
 }
 
@@ -384,16 +388,15 @@ function pickModel(name) {
   display: flex;
   align-items: center;
   gap: 8px;
-  padding: 6px 13px;
-  background: transparent;
+  padding: 7px 13px;
+  background: var(--model-selector-bg);
   border: 1px solid var(--modal-border);
-  border-radius: 5px;
+  border-radius: 7px;
   color: var(--beige);
   font-family: var(--font-sans), sans-serif;
   font-size: 11px;
   font-weight: 600;
-  letter-spacing: 0.06em;
-  text-transform: uppercase;
+  letter-spacing: 0.03em;
   cursor: pointer;
   transition:
     background 0.15s,
@@ -407,9 +410,9 @@ function pickModel(name) {
   color: var(--orange);
 }
 .ollama-btn:hover {
-  background: rgba(80, 0, 1, 0.15);
+  background: rgba(242, 122, 26, 0.1);
   border-color: var(--orange);
-  box-shadow: 0 0 12px rgba(240, 118, 12, 0.12);
+  box-shadow: 0 8px 22px rgba(242, 122, 26, 0.1);
 }
 
 .dropdown-fade-enter-active,

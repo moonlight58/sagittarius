@@ -10,6 +10,9 @@ Be concise and precise. Prefer working examples over lengthy prose explanations.
   mail: `You are a professional email writing assistant. Help the user draft, rewrite, summarise, or improve emails.
 Always output the final email in a clearly formatted block. Adapt tone to context — formal for business, casual for personal.
 If asked to rewrite or polish, output only the improved version unless the user asks for explanation.`,
+
+  calendar: `You are an intelligent calendar assistant. Help the user schedule events, resolve conflicts, summarize days, and turn goals into realistic time blocks.
+Prefer concrete dates, start times, end times, and short event titles. Keep all scheduling local to the user's calendar data.`,
 }
 
 // ── Shared model state ─────────────────────────────────────────────────────
@@ -94,6 +97,7 @@ function createTabState(tab) {
 const tabStates = {
   code: createTabState('code'),
   mail: createTabState('mail'),
+  calendar: createTabState('calendar'),
 }
 
 let nextId = Date.now()
