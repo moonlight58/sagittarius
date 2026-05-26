@@ -1,5 +1,7 @@
 <script setup>
-import { ref, computed } from 'vue'
+import { ref, computed, watch } from 'vue'
+import { marked } from 'marked'
+import hljs from 'highlight.js'
 import ViewTopbar from '../components/ViewTopbar.vue'
 import { useNotes } from '../composables/useNotes.js'
 
@@ -15,9 +17,28 @@ const {
 
 const searchQuery = ref('')
 const filteredNotes = computed(() => searchNotes(searchQuery.value))
+const isPreview = ref(false)
+
+// Configure marked with highlight.js
+marked.setOptions({
+  highlight(code, lang) {
+    if (lang && hljs.getLanguage(lang)) {
+      return hljs.highlight(code, { language: lang }).value
+    }
+    return hljs.highlightAuto(code).value
+  },
+  breaks: true,
+  gfm: true,
+})
+
+const renderedContent = computed(() => {
+  if (!activeNote.value) return ''
+  return marked.parse(activeNote.value.content || '')
+})
 
 function handleAddNote() {
   addNote('New Note', '')
+  isPreview.value = false
 }
 
 function formatDate(ts) {
@@ -40,6 +61,12 @@ function exportToMarkdown() {
   a.click()
   URL.revokeObjectURL(url)
 }
+
+// Reset preview when switching notes
+watch(activeNote, () => {
+  // We might want to keep the current mode or reset it.
+  // Let's keep it for now as it's more convenient if you're browsing previews.
+})
 </script>
 
 <template>
@@ -93,20 +120,39 @@ function exportToMarkdown() {
                 @input="(e) => updateNote(activeNote.id, { title: e.target.value })"
                 placeholder="Note Title"
               />
-              <button class="export-btn" @click="exportToMarkdown" title="Export as Markdown">
-                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
-                Export
-              </button>
+              <div class="header-actions">
+                <button
+                  class="preview-toggle"
+                  :class="{ active: isPreview }"
+                  @click="isPreview = !isPreview"
+                  title="Toggle Preview"
+                >
+                  <svg v-if="!isPreview" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+                  <svg v-else xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
+                  {{ isPreview ? 'Edit' : 'Preview' }}
+                </button>
+                <button class="export-btn" @click="exportToMarkdown" title="Export as Markdown">
+                  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+                  Export
+                </button>
+              </div>
             </div>
             <span class="last-saved">Last saved: {{ formatDate(activeNote.ts) }}</span>
           </header>
-          <div class="editor-body">
+          <div class="editor-body" :class="{ 'preview-mode': isPreview }">
             <textarea
+              v-if="!isPreview"
               class="content-textarea"
               :value="activeNote.content"
               @input="(e) => updateNote(activeNote.id, { content: e.target.value })"
-              placeholder="Start writing..."
+              placeholder="Start writing in Markdown..."
             ></textarea>
+            <div
+              v-else
+              class="markdown-body"
+              v-html="renderedContent"
+              @click="isPreview = false"
+            ></div>
           </div>
         </template>
         <div v-else class="empty-editor">
@@ -331,7 +377,13 @@ function exportToMarkdown() {
   flex: 1;
 }
 
-.export-btn {
+.header-actions {
+  display: flex;
+  gap: 12px;
+  align-items: center;
+}
+
+.preview-toggle, .export-btn {
   display: flex;
   align-items: center;
   gap: 8px;
@@ -346,14 +398,27 @@ function exportToMarkdown() {
   transition: all 0.2s;
 }
 
-.export-btn:hover {
+.preview-toggle:hover, .export-btn:hover {
   border-color: var(--orange);
   background: var(--sidebar-tab-hover-bg);
 }
 
-.export-btn svg {
+.preview-toggle.active {
+  background: var(--sidebar-tab-active-bg);
+  border-color: var(--orange);
+  color: var(--orange);
+}
+
+.preview-toggle svg, .export-btn svg {
   width: 14px;
   height: 14px;
+}
+
+.preview-toggle svg {
+  color: inherit;
+}
+
+.export-btn svg {
   color: var(--orange);
 }
 
@@ -368,6 +433,11 @@ function exportToMarkdown() {
 .editor-body {
   flex: 1;
   padding: 40px;
+  overflow-y: auto;
+}
+
+.editor-body.preview-mode {
+  cursor: pointer;
 }
 
 .content-textarea {
@@ -439,4 +509,102 @@ function exportToMarkdown() {
     display: none;
   }
 }
+</style>
+
+<style>
+/* Unscoped markdown styles */
+.markdown-body {
+  color: var(--markdown-color);
+  font-family: var(--font-sans), sans-serif;
+  font-size: 16px;
+  line-height: 1.7;
+}
+
+.markdown-body p { margin: 0 0 16px; }
+.markdown-body p:last-child { margin-bottom: 0; }
+
+.markdown-body h1,
+.markdown-body h2,
+.markdown-body h3,
+.markdown-body h4 {
+  font-family: var(--font-serif), serif;
+  color: var(--markdown-h-color);
+  margin: 24px 0 12px;
+  line-height: 1.3;
+}
+.markdown-body h1 { font-size: 1.8em; border-bottom: 1px solid var(--markdown-hr-color); padding-bottom: 8px; }
+.markdown-body h2 { font-size: 1.5em; border-bottom: 1px solid var(--markdown-hr-color); padding-bottom: 4px; }
+.markdown-body h3 { font-size: 1.25em; }
+
+.markdown-body strong { color: var(--markdown-h-color); font-weight: 700; }
+.markdown-body em { color: var(--markdown-em-color); font-style: italic; }
+
+.markdown-body ul,
+.markdown-body ol { padding-left: 24px; margin: 8px 0 16px; }
+.markdown-body li { margin: 4px 0; }
+
+.markdown-body a {
+  color: var(--markdown-link-color);
+  text-decoration: none;
+  border-bottom: 1px solid rgba(240, 118, 12, 0.3);
+}
+.markdown-body a:hover { border-color: var(--orange); }
+
+.markdown-body blockquote {
+  border-left: 4px solid var(--markdown-blockquote-border);
+  margin: 16px 0;
+  padding: 8px 20px;
+  color: var(--markdown-blockquote-color);
+  background: rgba(255, 255, 255, 0.02);
+  font-style: italic;
+}
+
+.markdown-body hr {
+  border: none;
+  border-top: 2px solid var(--markdown-hr-color);
+  margin: 24px 0;
+}
+
+/* Inline code */
+.markdown-body code:not(pre code) {
+  font-family: var(--font-mono), monospace;
+  font-size: 0.9em;
+  background: var(--markdown-code-bg);
+  border: 1px solid var(--markdown-code-border);
+  border-radius: 4px;
+  padding: 2px 6px;
+  color: var(--markdown-code-color);
+}
+
+/* Code blocks */
+.markdown-body pre {
+  background: var(--markdown-pre-bg);
+  border: 1px solid var(--markdown-pre-border);
+  border-radius: 8px;
+  padding: 16px 20px;
+  overflow-x: auto;
+  margin: 16px 0;
+}
+
+.markdown-body pre code {
+  font-family: var(--font-mono), monospace;
+  font-size: 14px;
+  line-height: 1.6;
+  color: var(--markdown-pre-color);
+  background: transparent;
+  border: none;
+  padding: 0;
+}
+
+/* highlight.js tokens */
+.markdown-body .hljs-keyword { color: #e05a3a; }
+.markdown-body .hljs-string { color: #a8c070; }
+.markdown-body .hljs-comment { color: #8a7060; font-style: italic; }
+.markdown-body .hljs-number { color: #c8a050; }
+.markdown-body .hljs-function { color: #d4a070; }
+.markdown-body .hljs-title { color: #f0a060; }
+.markdown-body .hljs-params { color: #c0a080; }
+.markdown-body .hljs-built_in { color: #d08050; }
+.markdown-body .hljs-type { color: #b07050; }
+.markdown-body .hljs-attr { color: #c8a050; }
 </style>
