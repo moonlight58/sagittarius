@@ -263,20 +263,48 @@ export function useChat(tab) {
     await sendMessage(chat, lastUser.content, true)
   }
 
-  async function submitPrompt(content) {
+  async function submitPrompt(payload) {
+    const isObject = typeof payload === 'object' && payload !== null
+    const content = isObject ? payload.text : payload
+    const files = isObject ? payload.files : []
+
     let chat = activeChat.value
     if (!chat) {
       const id = nextId++
       chat = {
         id,
-        title: content.trim().slice(0, 40) || 'New chat',
+        title: content.trim().slice(0, 40) || (files.length ? `Chat with ${files.length} files` : 'New chat'),
         model: activeModel.value,
         messages: [],
       }
       chats.value.unshift(chat)
       activeChatId.value = id
     }
-    await sendMessage(chat, content)
+
+    if (files && files.length > 0) {
+      let fullContent = content
+      for (const file of files) {
+        try {
+          const text = await readFileAsText(file)
+          fullContent += `\n\n--- FILE: ${file.name} ---\n${text}`
+        } catch (err) {
+          console.error(`Failed to read file ${file.name}:`, err)
+          fullContent += `\n\n[Error reading file ${file.name}]`
+        }
+      }
+      await sendMessage(chat, fullContent)
+    } else {
+      await sendMessage(chat, content)
+    }
+  }
+
+  function readFileAsText(file) {
+    return new Promise((resolve, reject) => {
+      const reader = new FileReader()
+      reader.onload = () => resolve(reader.result)
+      reader.onerror = reject
+      reader.readAsText(file)
+    })
   }
 
   return {

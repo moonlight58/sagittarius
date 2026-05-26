@@ -102,12 +102,9 @@ const previewUrl = computed(() => {
   return URL.createObjectURL(blob)
 })
 
-// Auto-select latest artifact when new ones arrive
-watch(() => artifacts.value.length, (newLen, oldLen) => {
-  if (newLen > oldLen) {
-    selectedArtifactIndex.value = newLen - 1
-  }
-})
+function handlePromptSubmit(payload) {
+  submitPrompt(payload)
+}
 </script>
 
 <template>
@@ -129,7 +126,7 @@ watch(() => artifacts.value.length, (newLen, oldLen) => {
           <PromptBar
             :disabled="!canSubmit"
             :placeholder="canSubmit ? 'Start a new conversation...' : 'No model selected'"
-            @submit="submitPrompt"
+            @submit="handlePromptSubmit"
           />
         </div>
 
@@ -137,7 +134,7 @@ watch(() => artifacts.value.length, (newLen, oldLen) => {
           <div class="chat-container">
             <ChatView
               :chat="activeChat"
-              @submit="submitPrompt"
+              @submit="handlePromptSubmit"
               @stop="stopGeneration"
               @regenerate="regenerateLastMessage"
             />
