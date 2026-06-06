@@ -3,6 +3,7 @@ import { ref, computed, watch } from 'vue'
 import { marked } from 'marked'
 import hljs from 'highlight.js'
 import ViewTopbar from '../components/ViewTopbar.vue'
+import MarkdownEditor from '../components/MarkdownEditor.vue'
 import { useNotes } from '../composables/useNotes.js'
 
 const {
@@ -140,13 +141,11 @@ watch(activeNote, () => {
             <span class="last-saved">Last saved: {{ formatDate(activeNote.ts) }}</span>
           </header>
           <div class="editor-body" :class="{ 'preview-mode': isPreview }">
-            <textarea
+            <MarkdownEditor
               v-if="!isPreview"
-              class="content-textarea"
-              :value="activeNote.content"
-              @input="(e) => updateNote(activeNote.id, { content: e.target.value })"
-              placeholder="Start writing in Markdown..."
-            ></textarea>
+              :model-value="activeNote.content"
+              @update:model-value="(v) => updateNote(activeNote.id, { content: v })"
+            />
             <div
               v-else
               class="markdown-body"
